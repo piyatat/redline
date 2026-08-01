@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "redline": {
+      "command": "/ABSOLUTE/PATH/TO/redline/.build/debug/redline",
+      "args": ["mcp"],
+      "env": {
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/usr/local/bin:/Applications/Xcode.app/Contents/Developer/usr/bin",
+        "DEVELOPER_DIR": "/Applications/Xcode.app/Contents/Developer",
+        "REDLINE_WORKSPACE_ROOT": "/ABSOLUTE/PATH/TO/YOUR/APP/REPO"
+      }
+    }
+  }
+}

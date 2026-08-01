@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redline.dev/schema/bridge.v1.json",
+  "title": "Redline Bridge (feedback inspector extension) v1",
+  "type": "object",
+  "properties": {
+    "nodeId": { "type": "string" },
+    "hierarchyPath": { "type": "array", "items": { "type": "string" } },
+    "frame": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number" },
+        "h": { "type": "number" }
+      }
+    },
+    "measuredGaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "dx": { "type": "number" },
+          "dy": { "type": "number" }
+        }
+      }
+    },
+    "attributes": { "type": "object" }
+  }
+}

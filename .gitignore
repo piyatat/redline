@@ -1,0 +1,15 @@
+.DS_Store
+.build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+**/xcuserdata/
+DerivedData/
+**/.derivedData/
+.redline-feedback/
+.cursor/mcp.json
+examples/**/.cursor/mcp.json
+node_modules/
+CLI/dist/
+*.png
+feedback/

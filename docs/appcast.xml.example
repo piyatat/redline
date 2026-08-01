@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Redline</title>
+    <item>
+      <title>Version 0.2.0</title>
+      <shortVersionString>0.2.0</shortVersionString>
+      <pubDate>Mon, 06 Jul 2026 12:00:00 +0000</pubDate>
+      <enclosure url="https://example.com/redline/Redline-0.2.0.zip"
+                 version="2"
+                 shortVersionString="0.2.0"
+                 length="0"
+                 type="application/octet-stream"/>
+      <description><![CDATA[
+        <h2>Redline 0.2.0</h2>
+        <ul>
+          <li>R4: Fast mode, console, USB scan</li>
+          <li>Gate integration</li>
+        </ul>
+      ]]></description>
+    </item>
+  </channel>
+</rss>

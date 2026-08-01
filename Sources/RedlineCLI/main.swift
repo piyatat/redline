@@ -1,0 +1,3 @@
+import RedlineShared
+
+RedlineCLI.main()

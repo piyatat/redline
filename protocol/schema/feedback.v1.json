@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redline.dev/schema/feedback.v1.json",
+  "title": "Redline Feedback Protocol v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "screen",
+    "region",
+    "platform",
+    "capturedTs",
+    "comment",
+    "strokes",
+    "compositePngBase64"
+  ],
+  "properties": {
+    "schema": { "type": "integer", "const": 1 },
+    "screen": { "type": "string" },
+    "region": { "type": "string" },
+    "state": { "type": "string" },
+    "platform": { "type": "string", "enum": ["ios", "android", "web", "macos"] },
+    "mode": { "type": "string" },
+    "spec": { "type": "string" },
+    "capturedTs": { "type": "string", "format": "date-time" },
+    "comment": { "type": "string" },
+    "pins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["component", "pin"],
+        "properties": {
+          "component": { "type": "string" },
+          "pin": { "type": "string" }
+        }
+      }
+    },
+    "toolsUsed": { "type": "array", "items": { "type": "string" } },
+    "strokes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tool", "color", "points"],
+        "properties": {
+          "tool": { "type": "string" },
+          "color": { "type": "string" },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        }
+      }
+    },
+    "compositePngBase64": { "type": "string" },
+    "inspector": { "type": "object" }
+  },
+  "additionalProperties": false
+}

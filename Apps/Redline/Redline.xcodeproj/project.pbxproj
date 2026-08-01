@@ -1,0 +1,356 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000001 /* RedlineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* RedlineApp.swift */; };
+		B10000000000000000000002 /* AgentRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* AgentRunner.swift */; };
+		B10000000000000000000003 /* AgentSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* AgentSettingsStore.swift */; };
+		B10000000000000000000004 /* ArchiveExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* ArchiveExporter.swift */; };
+		B10000000000000000000005 /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* ConnectionManager.swift */; };
+		B10000000000000000000006 /* FeedbackBundleWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* FeedbackBundleWriter.swift */; };
+		B10000000000000000000007 /* FeedbackHTTPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000017 /* FeedbackHTTPServer.swift */; };
+		B10000000000000000000008 /* HierarchyInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* HierarchyInspectorView.swift */; };
+		B10000000000000000000009 /* InboxStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000019 /* InboxStore.swift */; };
+		B1000000000000000000000B /* HierarchyPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001B /* HierarchyPreviewView.swift */; };
+		B1000000000000000000000C /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001C /* UpdateChecker.swift */; };
+		B1000000000000000000000F /* RootWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000021 /* RootWindow.swift */; };
+		B10000000000000000000022 /* InboxPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000023 /* InboxPanelView.swift */; };
+		B10000000000000000000024 /* AgentSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000025 /* AgentSettingsPanelView.swift */; };
+		B10000000000000000000026 /* ReceiverSettingsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000027 /* ReceiverSettingsSnapshot.swift */; };
+		B10000000000000000000028 /* CursorCLIAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000029 /* CursorCLIAgent.swift */; };
+		B1000000000000000000002A /* ClaudeCLIAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000002B /* ClaudeCLIAgent.swift */; };
+		B1000000000000000000002C /* ProcessStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000002D /* ProcessStreamer.swift */; };
+		B1000000000000000000002E /* AgentLogPaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000002F /* AgentLogPaneView.swift */; };
+		B10000000000000000000032 /* AgentStreamProgressParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000033 /* AgentStreamProgressParser.swift */; };
+		B10000000000000000000034 /* AgentProcessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000035 /* AgentProcessController.swift */; };
+		B10000000000000000000036 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000037 /* AppTypography.swift */; };
+		B10000000000000000000038 /* PersistentSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000039 /* PersistentSplitView.swift */; };
+		B1000000000000000000000D /* RedlineShared in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000031 /* RedlineShared */; };
+		B1000000000000000000000E /* SceneKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001D /* SceneKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B10000000000000000000010 /* Redline.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Redline.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000011 /* RedlineApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedlineApp.swift; sourceTree = "<group>"; };
+		B10000000000000000000012 /* AgentRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunner.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* AgentSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsStore.swift; sourceTree = "<group>"; };
+		B10000000000000000000014 /* ArchiveExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveExporter.swift; sourceTree = "<group>"; };
+		B10000000000000000000015 /* ConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionManager.swift; sourceTree = "<group>"; };
+		B10000000000000000000016 /* FeedbackBundleWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackBundleWriter.swift; sourceTree = "<group>"; };
+		B10000000000000000000017 /* FeedbackHTTPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackHTTPServer.swift; sourceTree = "<group>"; };
+		B10000000000000000000018 /* HierarchyInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HierarchyInspectorView.swift; sourceTree = "<group>"; };
+		B10000000000000000000019 /* InboxStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxStore.swift; sourceTree = "<group>"; };
+		B1000000000000000000001B /* HierarchyPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HierarchyPreviewView.swift; sourceTree = "<group>"; };
+		B1000000000000000000001C /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		B10000000000000000000021 /* RootWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootWindow.swift; sourceTree = "<group>"; };
+		B10000000000000000000023 /* InboxPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxPanelView.swift; sourceTree = "<group>"; };
+		B10000000000000000000025 /* AgentSettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsPanelView.swift; sourceTree = "<group>"; };
+		B10000000000000000000027 /* ReceiverSettingsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiverSettingsSnapshot.swift; sourceTree = "<group>"; };
+		B10000000000000000000029 /* CursorCLIAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorCLIAgent.swift; sourceTree = "<group>"; };
+		B1000000000000000000002B /* ClaudeCLIAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCLIAgent.swift; sourceTree = "<group>"; };
+		B1000000000000000000002D /* ProcessStreamer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStreamer.swift; sourceTree = "<group>"; };
+		B1000000000000000000002F /* AgentLogPaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLogPaneView.swift; sourceTree = "<group>"; };
+		B10000000000000000000033 /* AgentStreamProgressParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStreamProgressParser.swift; sourceTree = "<group>"; };
+		B10000000000000000000035 /* AgentProcessController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProcessController.swift; sourceTree = "<group>"; };
+		B10000000000000000000037 /* AppTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTypography.swift; sourceTree = "<group>"; };
+		B10000000000000000000039 /* PersistentSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistentSplitView.swift; sourceTree = "<group>"; };
+		B1000000000000000000001D /* SceneKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SceneKit.framework; path = System/Library/Frameworks/SceneKit.framework; sourceTree = SDKROOT; };
+		B1000000000000000000001E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B1000000000000000000001F /* Redline.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Redline.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B10000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000000000000000000000D /* RedlineShared in Frameworks */,
+				B1000000000000000000000E /* SceneKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B10000000000000000000040 = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000041 /* Sources */,
+				B1000000000000000000001E /* Info.plist */,
+				B1000000000000000000001F /* Redline.entitlements */,
+				B10000000000000000000043 /* Frameworks */,
+				B10000000000000000000042 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B10000000000000000000041 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000011 /* RedlineApp.swift */,
+				B10000000000000000000012 /* AgentRunner.swift */,
+				B10000000000000000000013 /* AgentSettingsStore.swift */,
+				B10000000000000000000014 /* ArchiveExporter.swift */,
+				B10000000000000000000015 /* ConnectionManager.swift */,
+				B10000000000000000000016 /* FeedbackBundleWriter.swift */,
+				B10000000000000000000017 /* FeedbackHTTPServer.swift */,
+				B10000000000000000000018 /* HierarchyInspectorView.swift */,
+				B10000000000000000000019 /* InboxStore.swift */,
+				B10000000000000000000023 /* InboxPanelView.swift */,
+				B10000000000000000000025 /* AgentSettingsPanelView.swift */,
+				B10000000000000000000027 /* ReceiverSettingsSnapshot.swift */,
+				B10000000000000000000029 /* CursorCLIAgent.swift */,
+				B1000000000000000000002B /* ClaudeCLIAgent.swift */,
+				B1000000000000000000002D /* ProcessStreamer.swift */,
+				B1000000000000000000002F /* AgentLogPaneView.swift */,
+				B10000000000000000000033 /* AgentStreamProgressParser.swift */,
+				B10000000000000000000035 /* AgentProcessController.swift */,
+				B10000000000000000000037 /* AppTypography.swift */,
+				B10000000000000000000039 /* PersistentSplitView.swift */,
+				B10000000000000000000021 /* RootWindow.swift */,
+				B1000000000000000000001B /* HierarchyPreviewView.swift */,
+				B1000000000000000000001C /* UpdateChecker.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		B10000000000000000000042 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000010 /* Redline.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B10000000000000000000043 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000001D /* SceneKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B10000000000000000000050 /* Redline */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000000000000000000070 /* Build configuration list for PBXNativeTarget "Redline" */;
+			buildPhases = (
+				B10000000000000000000051 /* Sources */,
+				B10000000000000000000020 /* Frameworks */,
+				B10000000000000000000052 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Redline;
+			packageProductDependencies = (
+				B10000000000000000000031 /* RedlineShared */,
+			);
+			productName = Redline;
+			productReference = B10000000000000000000010 /* Redline.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B10000000000000000000060 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = B10000000000000000000071 /* Build configuration list for PBXProject "Redline" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B10000000000000000000040;
+			packageReferences = (
+				B10000000000000000000030 /* XCLocalSwiftPackageReference "../../" */,
+			);
+			productRefGroup = B10000000000000000000042 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B10000000000000000000050 /* Redline */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B10000000000000000000052 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B10000000000000000000051 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000001 /* RedlineApp.swift in Sources */,
+				B10000000000000000000002 /* AgentRunner.swift in Sources */,
+				B10000000000000000000003 /* AgentSettingsStore.swift in Sources */,
+				B10000000000000000000004 /* ArchiveExporter.swift in Sources */,
+				B10000000000000000000005 /* ConnectionManager.swift in Sources */,
+				B10000000000000000000006 /* FeedbackBundleWriter.swift in Sources */,
+				B10000000000000000000007 /* FeedbackHTTPServer.swift in Sources */,
+				B10000000000000000000008 /* HierarchyInspectorView.swift in Sources */,
+				B10000000000000000000009 /* InboxStore.swift in Sources */,
+				B10000000000000000000022 /* InboxPanelView.swift in Sources */,
+				B10000000000000000000024 /* AgentSettingsPanelView.swift in Sources */,
+				B10000000000000000000026 /* ReceiverSettingsSnapshot.swift in Sources */,
+				B10000000000000000000028 /* CursorCLIAgent.swift in Sources */,
+				B1000000000000000000002A /* ClaudeCLIAgent.swift in Sources */,
+				B1000000000000000000002C /* ProcessStreamer.swift in Sources */,
+				B1000000000000000000002E /* AgentLogPaneView.swift in Sources */,
+				B10000000000000000000032 /* AgentStreamProgressParser.swift in Sources */,
+				B10000000000000000000034 /* AgentProcessController.swift in Sources */,
+				B10000000000000000000036 /* AppTypography.swift in Sources */,
+				B10000000000000000000038 /* PersistentSplitView.swift in Sources */,
+				B1000000000000000000000F /* RootWindow.swift in Sources */,
+				B1000000000000000000000B /* HierarchyPreviewView.swift in Sources */,
+				B1000000000000000000000C /* UpdateChecker.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B10000000000000000000080 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B10000000000000000000081 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		B10000000000000000000082 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Redline.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.redline.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B10000000000000000000083 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Redline.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.redline.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B10000000000000000000070 /* Build configuration list for PBXNativeTarget "Redline" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000082 /* Debug */,
+				B10000000000000000000083 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000000000000000000071 /* Build configuration list for PBXProject "Redline" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000080 /* Debug */,
+				B10000000000000000000081 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B10000000000000000000030 /* XCLocalSwiftPackageReference "../../" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B10000000000000000000031 /* RedlineShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000030 /* XCLocalSwiftPackageReference "../../" */;
+			productName = RedlineShared;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B10000000000000000000060 /* Project object */;
+}

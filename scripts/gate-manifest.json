@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "stages": [
+    {
+      "name": "validate-feedback",
+      "script": "scripts/validate-feedback.mjs",
+      "required": true
+    }
+  ]
+}
