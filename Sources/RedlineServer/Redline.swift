@@ -88,16 +88,23 @@ public enum Redline {
 
 #if os(iOS)
 extension Redline {
+    /// Fire-and-forget POST (logs failures to stderr). Prefer `postFeedbackAwaiting` from Save.
     public static func postFeedback(_ payload: FeedbackPayload) {
         guard _isDebugBuild else { return }
         Task {
             do {
-                try await FeedbackTransport.shared.post(payload)
-                fputs("[Redline] feedback OK → \(FeedbackTransport.shared.debugBaseURL)\n", stderr)
+                try await postFeedbackAwaiting(payload)
             } catch {
                 fputs("[Redline] feedback FAILED → \(FeedbackTransport.shared.debugBaseURL): \(error.localizedDescription)\n", stderr)
             }
         }
+    }
+
+    /// Awaitable POST — callers can keep markup open on failure.
+    public static func postFeedbackAwaiting(_ payload: FeedbackPayload) async throws {
+        guard _isDebugBuild else { return }
+        try await FeedbackTransport.shared.post(payload)
+        fputs("[Redline] feedback OK → \(FeedbackTransport.shared.debugBaseURL)\n", stderr)
     }
 }
 #endif

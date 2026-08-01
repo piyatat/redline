@@ -7,8 +7,12 @@ final class MCPStdioServer {
     private let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
         return encoder
     }()
+    /// Ids already delivered/claimed by this MCP process — survives across wait calls.
+    private var deliveredIds = Set<String>()
+    private var seededDelivered = false
 
     func run() {
         while let line = readLine(strippingNewline: true) {
@@ -83,15 +87,7 @@ final class MCPStdioServer {
                 return toolTextResponse(id: request.id, text: String(data: data, encoding: .utf8) ?? "{}")
             case "redline_wait_for_feedback":
                 let timeout = Double(params.stringArgument("timeoutSeconds") ?? "300") ?? 300
-                var item = try waitForFeedback(timeout: timeout)
-                // Claim the item so Redline.app shows Running while the desktop agent works.
-                if let updated = try? client.inboxSetStatus(
-                    id: item.id,
-                    status: InboxItem.Status.agentRunning.rawValue,
-                    summary: "Cursor MCP /redline-wait — in progress"
-                ) {
-                    item = updated
-                }
+                let item = try waitForFeedback(timeout: timeout)
                 let staged = stageForWorkspace(item)
                 let data = try encoder.encode(InboxItemMCPSnapshot(from: item, stagedFeedbackPath: staged))
                 return toolTextResponse(id: request.id, text: String(data: data, encoding: .utf8) ?? "{}")
@@ -135,12 +131,39 @@ final class MCPStdioServer {
 
     private func waitForFeedback(timeout: TimeInterval) throws -> InboxItem {
         let start = Date()
-        let knownIds = Set(try client.inboxList().map(\.id))
+        if !seededDelivered {
+            // Seed with non-pending so existing backlog pending items remain claimable;
+            // already-running / finished work is never re-delivered.
+            let existing = try client.inboxList()
+            deliveredIds = Set(existing.filter { $0.status != .pending }.map(\.id))
+            seededDelivered = true
+        }
 
         while Date().timeIntervalSince(start) < timeout {
             let items = try client.inboxList()
-            if let newest = items.first(where: { !knownIds.contains($0.id) }) {
-                return newest
+            // Re-open: if we delivered an id that is pending again, allow reclaim.
+            for item in items where item.status == .pending {
+                deliveredIds.remove(item.id)
+            }
+            let candidates = items
+                .filter { $0.status == .pending && !deliveredIds.contains($0.id) }
+                .sorted { $0.receivedAt < $1.receivedAt }
+            if let candidate = candidates.first {
+                do {
+                    let claimed = try client.inboxSetStatus(
+                        id: candidate.id,
+                        status: InboxItem.Status.agentRunning.rawValue,
+                        summary: "Cursor MCP /redline-wait — in progress"
+                    )
+                    deliveredIds.insert(candidate.id)
+                    return claimed
+                } catch {
+                    // Do not mark delivered — retry claim on next poll / next wait call.
+                    throw RedlineHTTPError.badStatus(
+                        409,
+                        message: "Claim failed: \(error.localizedDescription)"
+                    )
+                }
             }
             Thread.sleep(forTimeInterval: 0.5)
         }

@@ -23,14 +23,17 @@ public struct InboxItem: Codable, Equatable, Identifiable, Sendable {
 
         /// Maps legacy propose / gate-rejected values from older installs.
         public static func fromPersisted(_ raw: String) -> Status {
-            switch raw {
-            case "pending": return .pending
-            case "agent_running": return .agentRunning
-            case "applied": return .applied
-            case "failed": return .failed
-            case "proposed": return .pending
-            case "gate_rejected": return .failed
-            default: return .pending
+            parseAgentStatus(raw) ?? .pending
+        }
+
+        /// Parses MCP/HTTP status strings. Returns `nil` for unknown values (does not default).
+        public static func parseAgentStatus(_ raw: String) -> Status? {
+            switch raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "pending", "open", "proposed": return .pending
+            case "agent_running", "running", "in_progress": return .agentRunning
+            case "applied", "finished", "done": return .applied
+            case "failed", "error", "gate_rejected": return .failed
+            default: return nil
             }
         }
 

@@ -106,11 +106,10 @@ struct InboxPanelView: View {
             presenting: pendingDelete
         ) { item in
             Button("Remove", role: .destructive) {
-                removeItem(item)
+                let target = item
+                removeItem(target)
             }
-            Button("Cancel", role: .cancel) {
-                pendingDelete = nil
-            }
+            Button("Cancel", role: .cancel) {}
         } message: { item in
             Text("“\(item.payload.screen) — \(item.payload.region)” will be removed from the Inbox and its bundle deleted from disk.")
         }
@@ -307,6 +306,7 @@ struct InboxPanelView: View {
             InboxDetailView(
                 item: item,
                 preferDesktopMCP: settingsStore.settings.onNewFeedback == .awaitDesktopMCP,
+                canStopLocalAgent: agentRunner.isBusy,
                 onSendToAI: {
                     Task {
                         await agentRunner.runManually(
@@ -446,6 +446,7 @@ private struct InboxRowView: View {
 private struct InboxDetailView: View {
     let item: InboxItem
     var preferDesktopMCP: Bool = false
+    var canStopLocalAgent: Bool = false
     var onSendToAI: () -> Void
     var onStop: () -> Void
     var onEdit: () -> Void
@@ -524,14 +525,19 @@ private struct InboxDetailView: View {
 
     private var actions: some View {
         HStack(spacing: 8) {
-            if item.status == .agentRunning {
+            // Stop only when a local CLI process is running (MCP "Running" has no process to kill).
+            if canStopLocalAgent {
                 Button("Stop", role: .destructive, action: onStop)
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
-            } else if !preferDesktopMCP {
+            } else if !preferDesktopMCP, item.status != .agentRunning {
                 Button("Send to AI", action: onSendToAI)
                     .buttonStyle(.borderedProminent)
                     .help("Run the configured AI backend")
+            } else if item.status == .agentRunning, !canStopLocalAgent {
+                Text("Running via MCP — use status menu to mark Finished/Pending when done.")
+                    .appFont(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Button("Edit", action: onEdit)

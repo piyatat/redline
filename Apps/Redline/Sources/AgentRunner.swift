@@ -33,12 +33,27 @@ final class AgentRunner: ObservableObject {
         lastMessage = ""
     }
 
+    /// Reflect MCP/HTTP status updates in the log pane (no local process).
+    func noteExternalStatus(id: String, status: String, summary: String?) {
+        let clip = (summary ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let line: String
+        if clip.isEmpty {
+            line = "MCP status → \(status) (\(id.prefix(8))…)\n"
+        } else {
+            line = "MCP status → \(status): \(clip.prefix(200))\n"
+        }
+        appendLog(line)
+        lastMessage = "MCP: \(status)"
+    }
+
     /// Stop the currently running agent process and clear any queued jobs.
     func stop(inbox: InboxStore? = nil) {
         let queued = pendingJobs
         pendingJobs.removeAll()
         if let inbox {
             for job in queued {
+                // Never demote an MCP (or other) claim that already moved off pending.
+                guard let live = inbox.item(id: job.inboxItemId), live.status == .pending else { continue }
                 inbox.updateStatus(
                     id: job.inboxItemId,
                     status: .pending,
@@ -115,6 +130,18 @@ final class AgentRunner: ObservableObject {
             return
         }
 
+        // Don't steal an MCP/CLI claim with local chat.
+        if settings.onNewFeedback == .awaitDesktopMCP {
+            appendLog("Desktop MCP mode — use `/redline-wait` in Cursor instead of local chat.\n")
+            lastMessage = "Chat disabled in MCP mode"
+            return
+        }
+        if let item, item.status == .agentRunning, activeInboxItemId != item.id {
+            appendLog("Item is already Running (MCP or another job) — finish or mark Pending first.\n")
+            lastMessage = "Item already running"
+            return
+        }
+
         let continueSession = canContinueSession && lastSessionProjectPath == project
         let statusBeforeChat = item?.status ?? .pending
         let runId = UUID().uuidString
@@ -168,15 +195,17 @@ final class AgentRunner: ObservableObject {
             markSessionContinuable(projectPath: project)
         }
 
-        if let item, let path = item.bundleDirectory {
-            let logURL = URL(fileURLWithPath: path).appendingPathComponent("agent-hook.log")
-            try? agentLog.data(using: .utf8)?.write(to: logURL)
+        if let item {
+            if let path = item.bundleDirectory {
+                let logURL = URL(fileURLWithPath: path).appendingPathComponent("agent-hook.log")
+                try? agentLog.data(using: .utf8)?.write(to: logURL)
+            }
             let clipped = String((agentLog.isEmpty ? result.output : agentLog).prefix(2000))
             if result.cancelled {
                 inbox.updateStatus(id: item.id, status: .pending, proposalSummary: "Stopped by user\n\(clipped)")
             } else if result.success {
-                let restore = statusBeforeChat == .agentRunning ? .pending : statusBeforeChat
-                inbox.updateStatus(id: item.id, status: restore, proposalSummary: "Chat ok\n\(clipped)")
+                // Restore pre-chat status as-is (including agent_running for MCP claims).
+                inbox.updateStatus(id: item.id, status: statusBeforeChat, proposalSummary: "Chat ok\n\(clipped)")
             } else {
                 inbox.updateStatus(id: item.id, status: .failed, proposalSummary: "\(result.message)\n\(clipped)")
             }
@@ -196,10 +225,11 @@ final class AgentRunner: ObservableObject {
         inbox: InboxStore
     ) async {
         if isDuplicate(payload: item.payload) {
-            // Keep the first row; drop the duplicate without deleting designer work silently.
-            inbox.updateStatus(
+            // Terminal so MCP wait won't reclaim; never demote an existing claim.
+            updateStatusIfUnclaimed(
+                inbox: inbox,
                 id: item.id,
-                status: .pending,
+                status: .applied,
                 proposalSummary: "Duplicate of recent feedback — ignored (safe to Remove)"
             )
             lastMessage = "Ignored duplicate feedback"
@@ -210,7 +240,12 @@ final class AgentRunner: ObservableObject {
 
         switch settings.onNewFeedback {
         case .off:
-            inbox.updateStatus(id: item.id, status: .pending, proposalSummary: "Received — use Send to AI")
+            updateStatusIfUnclaimed(
+                inbox: inbox,
+                id: item.id,
+                status: .pending,
+                proposalSummary: "Received — use Send to AI"
+            )
             lastMessage = "Feedback received (auto-trigger off)"
             return
         case .notify:
@@ -218,7 +253,12 @@ final class AgentRunner: ObservableObject {
                 title: "Redline feedback",
                 body: "\(item.payload.screen) · \(item.payload.region)"
             )
-            inbox.updateStatus(id: item.id, status: .pending, proposalSummary: "Bundle written — notify only")
+            updateStatusIfUnclaimed(
+                inbox: inbox,
+                id: item.id,
+                status: .pending,
+                proposalSummary: "Bundle written — notify only"
+            )
             lastMessage = "Feedback received (notify only)"
             return
         case .awaitDesktopMCP:
@@ -234,7 +274,8 @@ final class AgentRunner: ObservableObject {
             } else if settings.projectPath?.isEmpty == false {
                 appendLog("Could not stage .redline-feedback — set Project folder and ensure bundle exists\n")
             }
-            inbox.updateStatus(
+            updateStatusIfUnclaimed(
+                inbox: inbox,
                 id: item.id,
                 status: .pending,
                 proposalSummary: "Awaiting Cursor desktop — run /redline-wait (MCP). CLI auto-trigger is off."
@@ -284,7 +325,7 @@ final class AgentRunner: ObservableObject {
     private func ensureConsent(settings: AgentSettings, inbox: InboxStore, itemId: String?) -> Bool {
         guard settings.consentExternalAi else {
             let note = "Enable “Allow Redline to call external AI” in Settings before running an agent"
-            if let itemId {
+            if let itemId, let live = inbox.item(id: itemId), live.status != .agentRunning {
                 inbox.updateStatus(id: itemId, status: .pending, proposalSummary: note)
             }
             lastMessage = note
@@ -304,13 +345,31 @@ final class AgentRunner: ObservableObject {
         return false
     }
 
+    /// Avoid clobbering MCP/CLI claim (`agent_running`) or finished outcomes.
+    private func updateStatusIfUnclaimed(
+        inbox: InboxStore,
+        id: String,
+        status: InboxItem.Status,
+        proposalSummary: String
+    ) {
+        guard let live = inbox.item(id: id) else { return }
+        switch live.status {
+        case .agentRunning, .applied, .failed:
+            appendLog("Skipped status update — item already \(live.status.rawValue)\n")
+            return
+        case .pending:
+            inbox.updateStatus(id: id, status: status, proposalSummary: proposalSummary)
+        }
+    }
+
     private func enqueue(
         job: AgentJob,
         settings: AgentSettings,
         inbox: InboxStore,
         item: InboxItem
     ) async {
-        if item.status == .agentRunning || activeInboxItemId == item.id {
+        let liveStatus = inbox.item(id: item.id)?.status ?? item.status
+        if liveStatus == .agentRunning || activeInboxItemId == item.id {
             lastMessage = "Agent already running for this item"
             appendLog("Skipped enqueue — already running for \(item.payload.screen)\n")
             return
@@ -346,9 +405,15 @@ final class AgentRunner: ObservableObject {
         await run(job: job, settings: settings, inbox: inbox, item: item)
         while let next = pendingJobs.first {
             pendingJobs.removeFirst()
-            if let item = inbox.item(id: next.inboxItemId) {
-                await run(job: next, settings: settings, inbox: inbox, item: item)
+            guard let item = inbox.item(id: next.inboxItemId) else { continue }
+            switch item.status {
+            case .agentRunning, .applied, .failed:
+                appendLog("Skipped queued job — item already \(item.status.rawValue)\n")
+                continue
+            case .pending:
+                break
             }
+            await run(job: next, settings: settings, inbox: inbox, item: item)
         }
     }
 
@@ -358,6 +423,15 @@ final class AgentRunner: ObservableObject {
         inbox: InboxStore,
         item: InboxItem
     ) async {
+        // Re-check in case MCP claimed while we were queued.
+        if let live = inbox.item(id: job.inboxItemId) {
+            let claimedElsewhere = live.status == .agentRunning && activeInboxItemId != job.inboxItemId
+            if claimedElsewhere || live.status == .applied || live.status == .failed {
+                appendLog("Skipped run — item already \(live.status.rawValue)\n")
+                lastMessage = "Skipped — item already \(live.status.displayName)"
+                return
+            }
+        }
         runningJobIDs.insert(job.id)
         isBusy = true
         activeInboxItemId = job.inboxItemId

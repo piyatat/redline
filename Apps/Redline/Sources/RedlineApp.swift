@@ -57,33 +57,40 @@ final class AppModel: ObservableObject {
             },
             inboxStatusHandler: { [weak self] id, statusRaw, summary in
                 guard let self else {
-                    return (503, "{\"ok\":false,\"error\":\"App not ready\"}")
+                    return (503, RedlineJSON.object(["ok": false, "error": "App not ready"]))
                 }
-                var payload = (ok: false, error: "Unknown error", status: statusRaw)
+                var httpStatus = 500
+                var body = RedlineJSON.object(["ok": false, "error": "Unknown error"])
                 let apply: () -> Void = {
-                    let status = InboxItem.Status.fromPersisted(statusRaw)
-                    let allowed: Set<String> = ["pending", "agent_running", "applied", "failed"]
-                    guard allowed.contains(status.rawValue) || allowed.contains(statusRaw) else {
-                        payload = (false, "Invalid status '\(statusRaw)' — use pending|agent_running|applied|failed", statusRaw)
+                    guard let resolved = InboxItem.Status.parseAgentStatus(statusRaw) else {
+                        httpStatus = 422
+                        body = RedlineJSON.object([
+                            "ok": false,
+                            "error": "Invalid status '\(statusRaw)' — use pending|agent_running|applied|failed",
+                        ])
                         return
-                    }
-                    // Normalize aliases (e.g. finished → applied is not mapped; accept finished as applied)
-                    let resolved: InboxItem.Status
-                    switch statusRaw.lowercased() {
-                    case "finished", "done", "applied": resolved = .applied
-                    case "running", "agent_running", "in_progress": resolved = .agentRunning
-                    case "failed", "error": resolved = .failed
-                    case "pending", "open": resolved = .pending
-                    default: resolved = status
                     }
                     let result = MainActor.assumeIsolated { () -> (Bool, String) in
                         let ok = self.inbox.setStatusFromAgent(id: id, status: resolved, summary: summary)
                         return (ok, self.inbox.lastError ?? "Update failed")
                     }
                     if result.0 {
-                        payload = (true, "", resolved.rawValue)
+                        httpStatus = 200
+                        body = RedlineJSON.object([
+                            "ok": true,
+                            "id": id,
+                            "status": resolved.rawValue,
+                        ])
+                        MainActor.assumeIsolated {
+                            self.agentRunner.noteExternalStatus(
+                                id: id,
+                                status: resolved.rawValue,
+                                summary: summary
+                            )
+                        }
                     } else {
-                        payload = (false, result.1, resolved.rawValue)
+                        httpStatus = result.1.contains("not found") ? 404 : 409
+                        body = RedlineJSON.object(["ok": false, "error": result.1])
                     }
                 }
                 if Thread.isMainThread {
@@ -91,11 +98,7 @@ final class AppModel: ObservableObject {
                 } else {
                     DispatchQueue.main.sync(execute: apply)
                 }
-                if payload.ok {
-                    return (200, "{\"ok\":true,\"id\":\"\(id)\",\"status\":\"\(payload.status)\"}")
-                }
-                let err = payload.error.replacingOccurrences(of: "\"", with: "'")
-                return (404, "{\"ok\":false,\"error\":\"\(err)\"}")
+                return (httpStatus, body)
             }
         ) { [weak self] payload in
             guard let self else { return }
@@ -115,7 +118,7 @@ final class AppModel: ObservableObject {
         do {
             try server.start()
             self.server = server
-            receiverStatus = "Listening on :\(RedlinePorts.feedbackDefault)"
+            receiverStatus = "Listening on 127.0.0.1:\(RedlinePorts.feedbackDefault)"
         } catch {
             receiverStatus = "Receiver failed: \(error.localizedDescription)"
         }
@@ -123,6 +126,16 @@ final class AppModel: ObservableObject {
 
     func settingsDidChange() {
         receiverSettings.update(from: settingsStore.settings)
+    }
+}
+
+private enum RedlineJSON {
+    static func object(_ dict: [String: Any]) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: dict, options: [.sortedKeys]),
+              let text = String(data: data, encoding: .utf8) else {
+            return "{\"ok\":false,\"error\":\"encode failed\"}"
+        }
+        return text
     }
 }
 

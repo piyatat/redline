@@ -75,9 +75,13 @@ final class CursorDesktopIntegrationTests: XCTestCase {
         let item = InboxItem(payload: payload, bundleDirectory: "/tmp/bundle")
         let snap = InboxItemMCPSnapshot(from: item)
         XCTAssertTrue(snap.compositeOmitted)
+        XCTAssertNil(snap.stagedFeedbackPath, "must not invent .redline-feedback without staging")
         XCTAssertEqual(snap.screen, "s")
         let data = try! JSONEncoder().encode(snap)
         let text = String(data: data, encoding: .utf8)!
         XCTAssertFalse(text.contains(String(repeating: "A", count: 50)))
+
+        let staged = InboxItemMCPSnapshot(from: item, stagedFeedbackPath: ".redline-feedback")
+        XCTAssertEqual(staged.stagedFeedbackPath, ".redline-feedback")
     }
 }

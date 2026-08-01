@@ -112,6 +112,10 @@ struct AgentLogPaneView: View {
     }
 
     private var chatEnabled: Bool {
+        // Desktop MCP mode — keep local CLI chat off to avoid fighting Cursor.
+        if settingsStore.settings.onNewFeedback == .awaitDesktopMCP {
+            return false
+        }
         switch settingsStore.settings.agentBackend {
         case .cursorCLI, .claudeCLI: return true
         case .shellHook: return false
@@ -169,6 +173,9 @@ struct AgentLogPaneView: View {
     }
 
     private var placeholder: String {
+        if settingsStore.settings.onNewFeedback == .awaitDesktopMCP {
+            return "Chat disabled in MCP mode — use /redline-wait in Cursor…"
+        }
         if !chatEnabled {
             return "Switch backend in Settings to Cursor or Claude to chat…"
         }
@@ -190,6 +197,9 @@ struct AgentLogPaneView: View {
     private var emptyHint: String {
         if agentRunner.isBusy {
             return "Waiting for agent output…"
+        }
+        if settingsStore.settings.onNewFeedback == .awaitDesktopMCP {
+            return "Desktop MCP mode — agent work happens in Cursor via `/redline-wait`. Status updates from MCP appear here."
         }
         if chatEnabled {
             return "Send to AI from an inbox item, or type a message below to talk to the agent in your project folder."

@@ -121,10 +121,21 @@ public enum GateRunner {
     }
 
     private static func resolveScript(_ path: String, workspaceRoot: URL) -> URL {
+        let root = workspaceRoot.resolvingSymlinksInPath().standardizedFileURL
+        let candidate: URL
         if path.hasPrefix("/") {
-            return URL(fileURLWithPath: path)
+            candidate = URL(fileURLWithPath: path)
+        } else {
+            candidate = root.appendingPathComponent(path)
         }
-        return workspaceRoot.appendingPathComponent(path)
+        let resolved = candidate.resolvingSymlinksInPath().standardizedFileURL
+        let c = resolved.path
+        let p = root.path
+        let prefix = p.hasSuffix("/") ? p : p + "/"
+        guard c == p || c.hasPrefix(prefix) else {
+            return root.appendingPathComponent(".__redline_blocked_script__")
+        }
+        return resolved
     }
 
     private static func bundledManifestURL() -> URL? {

@@ -171,10 +171,12 @@ struct AgentSettingsPanelView: View {
             .appFont(.caption)
             .foregroundStyle(.secondary)
 
-        DisclosureGroup("Optional: Send to AI (CLI) fallback", isExpanded: $showOptionalSendToAI) {
-            labeledHelp("Only if you still want Inbox → Send to AI. Prefer `/redline-wait` in this mode to avoid double work.")
+        DisclosureGroup("Optional: preconfigure Agent CLI", isExpanded: $showOptionalSendToAI) {
+            labeledHelp(
+                "Inbox hides Send to AI while MCP mode is selected. Configure CLI paths here only if you plan to switch to Agent CLI later — prefer `/redline-wait` in this mode."
+            )
             consentToggle
-            backendPickerAndDetails
+            backendPickerAndDetails(includeProjectFolder: false)
         }
     }
 
@@ -184,7 +186,7 @@ struct AgentSettingsPanelView: View {
             "Each Save starts the CLI below. Do not also run `/redline-wait` on the same feedback — pick one path."
         )
         consentToggle
-        backendPickerAndDetails
+        backendPickerAndDetails(includeProjectFolder: true)
     }
 
     @ViewBuilder
@@ -194,7 +196,7 @@ struct AgentSettingsPanelView: View {
         )
         DisclosureGroup("Configure Send to AI", isExpanded: $showOptionalSendToAI) {
             consentToggle
-            backendPickerAndDetails
+            backendPickerAndDetails(includeProjectFolder: true)
         }
     }
 
@@ -204,7 +206,7 @@ struct AgentSettingsPanelView: View {
             "Inbox stays quiet. Open an item and press Send to AI when you want a run."
         )
         consentToggle
-        backendPickerAndDetails
+        backendPickerAndDetails(includeProjectFolder: true)
     }
 
     // MARK: - Shared AI backend bits
@@ -226,7 +228,7 @@ struct AgentSettingsPanelView: View {
     }
 
     @ViewBuilder
-    private var backendPickerAndDetails: some View {
+    private func backendPickerAndDetails(includeProjectFolder: Bool) -> some View {
         Picker("Backend", selection: backendBinding) {
             ForEach(AgentBackend.allCases, id: \.self) { backend in
                 Text(backend.displayName).tag(backend)
@@ -238,7 +240,7 @@ struct AgentSettingsPanelView: View {
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
 
-        if usesProjectFolder {
+        if includeProjectFolder, usesProjectFolder {
             projectFolderRow
         }
 
@@ -318,14 +320,20 @@ struct AgentSettingsPanelView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Receiver")
                 .appFont(.headline)
-            Text("HTTP endpoint where the iOS app posts feedback. Prefer USB (`iproxy`) or localhost; set a token if you expose LAN.")
+            Text("HTTP endpoint where the iOS app posts feedback. Binds loopback only (`127.0.0.1`). Simulator works out of the box; physical devices need a USB reverse tunnel to that port (stock `iproxy` is Mac→device only — see docs/device-setup.md). Set a token if other local processes share this Mac.")
                 .appFont(.caption)
                 .foregroundStyle(.secondary)
 
-            TextField("API token (optional)", text: optionalBinding(\.apiToken))
-            Text("Same value as `REDLINE_API_TOKEN` / scheme env on device. Not written into project `mcp.json`.")
+            SecureField("API token (optional)", text: optionalBinding(\.apiToken))
+            Text("Same value as `REDLINE_API_TOKEN` / scheme env on device. Not written into project `mcp.json`. Receiver binds loopback only.")
                 .appFont(.caption)
                 .foregroundStyle(.secondary)
+
+            if settingsStore.settings.apiToken?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
+                Text("No token set — any local process can POST to the receiver. Set a token if other users share this Mac.")
+                    .appFont(.caption)
+                    .foregroundStyle(.orange)
+            }
 
             LabeledContent("Max body bytes") {
                 TextField(
@@ -576,8 +584,7 @@ struct AgentSettingsPanelView: View {
                 let result = try CursorDesktopIntegration.installIntoProject(
                     projectPath: project,
                     packagePath: package,
-                    workspaceRoot: project,
-                    apiToken: nil
+                    workspaceRoot: project
                 )
                 let binaryHint: String
                 if result.deeplink.contains(".build/") {

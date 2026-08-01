@@ -169,14 +169,14 @@ CLI equivalent: `swift run redline agent run <inbox-id>` with `REDLINE_AGENT_HOO
 If Settings → **API token** is set on the Mac app, **all** clients must send the same bearer (`POST /feedback`, `GET /health`, `GET /inbox`):
 
 ```bash
-export REDLINE_API_TOKEN=your-token   
+export REDLINE_API_TOKEN=your-token
 ```
 
 - iOS: set in the scheme environment
 - CLI: picks up `REDLINE_API_TOKEN` automatically (`swift run redline health`)
 - Cursor MCP: set the env var in Cursor’s MCP server config UI — **Install into project does not write tokens** into `.cursor/mcp.json` (avoids committing secrets)
 
-**Security:** Prefer localhost / USB (`iproxy`) for feedback. If you expose `:8765` on LAN, set an API token.
+**Security:** The Mac receiver binds **loopback only** (`127.0.0.1`). Prefer Simulator for feedback, or a USB **reverse** tunnel for devices (stock `iproxy` is Mac→device and does not reach the receiver). Set an API token if other local processes share the machine.
 
 ---
 

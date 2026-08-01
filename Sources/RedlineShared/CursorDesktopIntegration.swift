@@ -125,12 +125,12 @@ public enum CursorDesktopIntegration {
     }
 
     /// Merge `redline` into `<project>/.cursor/mcp.json` and write skill + slash command.
+    /// Does not embed API tokens into project files (token stays in Redline.app / env).
     @discardableResult
     public static func installIntoProject(
         projectPath: String,
         packagePath: String,
-        workspaceRoot: String? = nil,
-        apiToken: String? = nil
+        workspaceRoot: String? = nil
     ) throws -> InstallResult {
         let project = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !project.isEmpty, FileManager.default.fileExists(atPath: project) else {
@@ -187,8 +187,19 @@ public enum CursorDesktopIntegration {
             existing = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
         }
         var additions: [String] = []
-        for entry in entries where !existing.contains(entry) {
-            additions.append(entry)
+        let lines = existing.split(whereSeparator: \.isNewline).map(String.init)
+        for entry in entries {
+            var found = false
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if trimmed == entry || trimmed == entry + "/" {
+                    found = true
+                    break
+                }
+            }
+            if !found {
+                additions.append(entry)
+            }
         }
         guard !additions.isEmpty else { return }
         let block = (existing.isEmpty || existing.hasSuffix("\n") ? "" : "\n")

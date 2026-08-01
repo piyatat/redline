@@ -70,17 +70,17 @@ Full setup: [docs/agent-wiring.md](docs/agent-wiring.md) · example config: `.cu
 
 ## Updates
 
-Set `REDLINE_APPCAST_URL` for update checks (see [docs/appcast-setup.md](docs/appcast-setup.md)).
+Optional `REDLINE_APPCAST_URL` for distribution feeds (see [docs/appcast-setup.md](docs/appcast-setup.md)). In-app Check for Updates is not wired yet.
 
 ## Project status
 
 - [x] R1 — Mac app MVP + designer feedback
 - [x] R2 — Bridge, measure, live edit, SceneKit preview, export
 - [x] R3 — CLI/MCP, HTTP `/inbox`
-- [x] R4 — Fast mode, console, per-node refresh, USB scan, update checker, device docs
+- [x] R4 — Fast mode, console, per-node refresh, USB inspect ports, appcast docs, device docs
 - [ ] R5 — Android / web capture
 
-See [implementation plan](../doc/plan/Redline_Implementation_Plan.md).
+See the Redline implementation plan in the parent workspace (`doc/plan/`) when present.
 
 ## License
 

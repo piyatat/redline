@@ -80,7 +80,15 @@ final class AgentSettingsStore: ObservableObject {
         // Avoid main-thread filesystem stalls while clicking through Settings.
         saveTask?.cancel()
         saveTask = Task.detached(priority: .utility) {
-            try? data.write(to: url, options: .atomic)
+            do {
+                try data.write(to: url, options: .atomic)
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: 0o600],
+                    ofItemAtPath: url.path
+                )
+            } catch {
+                // Best-effort persist; UI already holds in-memory settings.
+            }
         }
     }
 

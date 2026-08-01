@@ -184,8 +184,7 @@ enum RedlineCLI {
             let result = try CursorDesktopIntegration.installIntoProject(
                 projectPath: project,
                 packagePath: package,
-                workspaceRoot: project,
-                apiToken: ProcessInfo.processInfo.environment[RedlineEnvironment.apiTokenKey]
+                workspaceRoot: project
             )
             print("mcp: \(result.mcpJSONPath)")
             print("skill: \(result.skillPath)")

@@ -35,9 +35,34 @@ public struct InboxItemMCPSnapshot: Codable, Equatable, Sendable {
         proposalSummary = item.proposalSummary
         runtime = item.payload.runtime
         compositeOmitted = true
+        // Only set when staging actually succeeded — do not invent `.redline-feedback`.
         self.stagedFeedbackPath = stagedFeedbackPath
-            ?? (item.bundleDirectory != nil
-                ? FeedbackBundleStager.folderName
-                : nil)
+    }
+
+    /// Rebuild a minimal `InboxItem` for MCP/HTTP clients (composite intentionally empty).
+    public func asInboxItem() -> InboxItem {
+        InboxItem(
+            id: id,
+            receivedAt: receivedAt,
+            status: status,
+            payload: FeedbackPayload(
+                screen: screen,
+                region: region,
+                state: state,
+                platform: platform,
+                mode: mode,
+                spec: spec,
+                capturedTs: capturedTs,
+                comment: comment,
+                pins: [],
+                toolsUsed: [],
+                strokes: [],
+                compositePngBase64: "",
+                inspector: nil,
+                runtime: runtime
+            ),
+            bundleDirectory: bundleDirectory,
+            proposalSummary: proposalSummary
+        )
     }
 }

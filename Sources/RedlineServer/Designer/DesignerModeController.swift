@@ -112,8 +112,17 @@ public final class DesignerModeController: ObservableObject {
             )
         )
         pendingBridge = nil
-        showMarkup = false
-        Redline.postFeedback(payload)
+        do {
+            try await Redline.postFeedbackAwaiting(payload)
+            showMarkup = false
+            markupComment = ""
+            strokes = []
+            toolsUsed = []
+        } catch {
+            // Keep markup sheet open so the designer can retry after fixing the receiver.
+            fputs("[Redline] saveMarkup failed: \(error.localizedDescription)\n", stderr)
+            showMarkup = true
+        }
     }
 }
 #endif

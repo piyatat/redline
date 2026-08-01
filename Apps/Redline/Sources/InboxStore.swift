@@ -83,7 +83,10 @@ final class InboxStore: ObservableObject {
         guard InboxItem.Status.manuallyAssignable.contains(status) else { return false }
         guard items[index].status != status else { return true }
         items[index].status = status
-        items[index].proposalSummary = "Status set manually to \(status.displayName)"
+        // Preserve agent/MCP summaries; only stamp a note when none exists.
+        if items[index].proposalSummary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
+            items[index].proposalSummary = "Status set manually to \(status.displayName)"
+        }
         lastError = nil
         persist()
         return true
@@ -96,10 +99,25 @@ final class InboxStore: ObservableObject {
             lastError = "Inbox item not found"
             return false
         }
+        let current = items[index].status
+        // Reject illegal reopen / reclaim transitions.
+        switch (current, status) {
+        case (.applied, .agentRunning), (.failed, .agentRunning):
+            lastError = "Cannot claim \(current.rawValue) item as agent_running"
+            return false
+        case (.agentRunning, .agentRunning):
+            // Idempotent reclaim OK — refresh summary if provided.
+            break
+        case (.applied, .applied), (.failed, .failed), (.pending, .pending):
+            break
+        default:
+            break
+        }
         items[index].status = status
-        if let summary, !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            items[index].proposalSummary = summary
-        } else {
+        let trimmed = summary?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmed.isEmpty {
+            items[index].proposalSummary = trimmed
+        } else if items[index].proposalSummary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
             switch status {
             case .agentRunning:
                 items[index].proposalSummary = "Cursor MCP agent working…"
@@ -148,7 +166,12 @@ final class InboxStore: ObservableObject {
         }
 
         if let path = items[index].bundleDirectory {
-            let bundle = URL(fileURLWithPath: path)
+            let bundle = URL(fileURLWithPath: path).standardizedFileURL
+            guard isBundlePathSafe(bundle) else {
+                lastError = "Refusing to write outside feedback directory"
+                persist()
+                return true
+            }
             do {
                 try payload.encode().write(to: bundle.appendingPathComponent("feedback.json"), options: .atomic)
                 let prompt = AgentPromptBuilder().makePrompt(for: payload, bundleDirectory: bundle)
@@ -179,8 +202,12 @@ final class InboxStore: ObservableObject {
         persist()
 
         if deleteBundle, let bundlePath {
-            let url = URL(fileURLWithPath: bundlePath)
-            try? FileManager.default.removeItem(at: url)
+            let url = URL(fileURLWithPath: bundlePath).standardizedFileURL
+            if isBundlePathSafe(url) {
+                try? FileManager.default.removeItem(at: url)
+            } else {
+                lastError = "Skipped deleting bundle outside feedback directory"
+            }
         }
         return true
     }
@@ -204,18 +231,33 @@ final class InboxStore: ObservableObject {
 
         if deleteBundles {
             for path in paths {
-                try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
+                let url = URL(fileURLWithPath: path).standardizedFileURL
+                guard isBundlePathSafe(url) else { continue }
+                try? FileManager.default.removeItem(at: url)
             }
         }
         return finished.count
+    }
+
+    private func isBundlePathSafe(_ url: URL) -> Bool {
+        let feedbackRoot = supportDirectory
+            .appendingPathComponent("feedback", isDirectory: true)
+            .standardizedFileURL
+        let child = url.standardizedFileURL.path
+        let parent = feedbackRoot.path
+        if child == parent { return true }
+        let prefix = parent.hasSuffix("/") ? parent : parent + "/"
+        return child.hasPrefix(prefix)
     }
 
     func item(id: String) -> InboxItem? {
         items.first { $0.id == id }
     }
 
+    /// Slim list for `GET /inbox` — omits `compositePngBase64` (use bundle on disk for pixels).
     func inboxJSON() throws -> Data {
-        try encoder.encode(items)
+        let snaps = items.map { InboxItemMCPSnapshot(from: $0, stagedFeedbackPath: nil) }
+        return try encoder.encode(snaps)
     }
 
     /// Finished = successfully applied. Everything else stays as open/history work.
@@ -284,7 +326,7 @@ final class InboxStore: ObservableObject {
         // Process was killed with the app — not actually running anymore.
         if status == .agentRunning {
             status = .pending
-            let note = "Interrupted last session — use Send to AI"
+            let note = "Interrupted last session — retry via Send to AI or /redline-wait"
             if let existing = summary, !existing.isEmpty {
                 summary = "\(note)\n\(existing)"
             } else {

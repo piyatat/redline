@@ -29,6 +29,10 @@ public struct RedlineHTTPClient: Sendable {
         }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
+        // Prefer slim MCP snapshots (no composite); fall back to full InboxItem for older servers.
+        if let snaps = try? decoder.decode([InboxItemMCPSnapshot].self, from: data) {
+            return snaps.map { $0.asInboxItem() }
+        }
         return try decoder.decode([InboxItem].self, from: data)
     }
 

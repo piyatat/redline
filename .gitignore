@@ -7,9 +7,13 @@
 DerivedData/
 **/.derivedData/
 .redline-feedback/
+.redline-feedback/**/*.png
 .cursor/mcp.json
 examples/**/.cursor/mcp.json
 node_modules/
 CLI/dist/
-*.png
+.env
+.env.*
+!.env.example
 feedback/
+feedback/**/*.png

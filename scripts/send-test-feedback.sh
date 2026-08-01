@@ -5,12 +5,12 @@ set -euo pipefail
 PORT="${1:-8765}"
 BODY='{
   "schema": 1,
-  "screen": "demo-screen",
-  "region": "Primary CTA",
+  "screen": "demo-home",
+  "region": "CTA",
   "state": "default",
   "platform": "ios",
   "mode": "light",
-  "spec": "screens/demo.screen.md",
+  "spec": "screens/demo-home.screen.md",
   "capturedTs": "2026-07-06T12:00:00Z",
   "comment": "Make the button full width",
   "pins": [{ "component": "Button", "pin": "fillWidth=true" }],

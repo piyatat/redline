@@ -42,7 +42,9 @@ final class FeedbackHTTPServer: @unchecked Sendable {
         }
 
         let nwPort = NWEndpoint.Port(rawValue: port)!
-        let listener = try NWListener(using: parameters, on: nwPort)
+        // Loopback only — physical devices need a USB reverse tunnel to 127.0.0.1 (stock iproxy is Mac→device).
+        parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: nwPort)
+        let listener = try NWListener(using: parameters)
         self.listener = listener
 
         listener.newConnectionHandler = { [weak self] connection in
@@ -53,7 +55,7 @@ final class FeedbackHTTPServer: @unchecked Sendable {
         listener.stateUpdateHandler = { state in
             switch state {
             case .ready:
-                fputs("Redline receiver listening on http://127.0.0.1:\(boundPort)\n", stderr)
+                fputs("Redline receiver listening on http://127.0.0.1:\(boundPort) (loopback only)\n", stderr)
             case .failed(let error):
                 fputs("Redline receiver failed: \(error)\n", stderr)
             default:
