@@ -17,3 +17,12 @@ CLI/dist/
 !.env.example
 feedback/
 feedback/**/*.png
+android/.gradle/
+android/**/build/
+android/local.properties
+android/.idea/
+android/.kotlin/
+examples/AndroidDemo/build/
+examples/AndroidDemo/.gradle/
+examples/AndroidDemo/.kotlin/
+examples/AndroidDemo/.idea/

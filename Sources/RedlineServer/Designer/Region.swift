@@ -28,7 +28,7 @@ private struct DesignerRegionTagModifier: ViewModifier {
         content
             .accessibilityIdentifier("redlineRegion:\(name)")
             .overlay {
-                if controller.isDesignerModeActive && !controller.showMarkup {
+                if controller.isDesignerModeActive && !controller.showMarkup && !controller.isSaving && !controller.isCapturing {
                     ZStack {
                         Rectangle()
                             .fill(Color.orange.opacity(0.12))

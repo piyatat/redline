@@ -76,7 +76,7 @@ private struct DemoHomeView: View {
                 .padding(.bottom, 24)
                 .disabled(designer.showMarkup)
             }
-            .padding(.top, 32)
+            .padding(.top, 72)
             .navigationTitle("Demo")
         }
         .navigationViewStyle(.stack)

@@ -144,6 +144,16 @@ final class AgentRunner: ObservableObject {
 
         let continueSession = canContinueSession && lastSessionProjectPath == project
         let statusBeforeChat = item?.status ?? .pending
+
+        // CAS claim before marking busy — same ownership model as run().
+        if let item, item.status == .pending {
+            guard inbox.claimPendingAsRunning(id: item.id, summary: "Chat…") else {
+                appendLog("Could not claim item — \(inbox.lastError ?? "already claimed").\n")
+                lastMessage = inbox.lastError ?? "Claim failed"
+                return
+            }
+        }
+
         let runId = UUID().uuidString
         runningJobIDs.insert(runId)
         isBusy = true
@@ -158,7 +168,7 @@ final class AgentRunner: ObservableObject {
             }
         }
 
-        if let item {
+        if let item, item.status != .pending {
             inbox.updateStatus(id: item.id, status: .agentRunning, proposalSummary: "Chat…")
         }
 
@@ -201,12 +211,18 @@ final class AgentRunner: ObservableObject {
                 try? agentLog.data(using: .utf8)?.write(to: logURL)
             }
             let clipped = String((agentLog.isEmpty ? result.output : agentLog).prefix(2000))
+            let live = inbox.items.first(where: { $0.id == item.id })?.status
             if result.cancelled {
-                inbox.updateStatus(id: item.id, status: .pending, proposalSummary: "Stopped by user\n\(clipped)")
+                // Only demote if we still own the running claim.
+                if live == nil || live == .agentRunning {
+                    inbox.updateStatus(id: item.id, status: .pending, proposalSummary: "Stopped by user\n\(clipped)")
+                }
             } else if result.success {
-                // Restore pre-chat status as-is (including agent_running for MCP claims).
-                inbox.updateStatus(id: item.id, status: statusBeforeChat, proposalSummary: "Chat ok\n\(clipped)")
-            } else {
+                // Restore pre-chat status only while we still own the running claim.
+                if live == .agentRunning {
+                    inbox.updateStatus(id: item.id, status: statusBeforeChat, proposalSummary: "Chat ok\n\(clipped)")
+                }
+            } else if live == nil || live == .agentRunning {
                 inbox.updateStatus(id: item.id, status: .failed, proposalSummary: "\(result.message)\n\(clipped)")
             }
         }
@@ -289,6 +305,7 @@ final class AgentRunner: ObservableObject {
                 body: "\(item.payload.screen) · \(item.payload.region)"
             )
             guard ensureConsent(settings: settings, inbox: inbox, itemId: item.id) else { return }
+            guard ensureReceiverAuthForAutoAgent(settings: settings, inbox: inbox, itemId: item.id) else { return }
             guard let path = item.bundleDirectory else {
                 inbox.updateStatus(
                     id: item.id,
@@ -325,6 +342,26 @@ final class AgentRunner: ObservableObject {
     private func ensureConsent(settings: AgentSettings, inbox: InboxStore, itemId: String?) -> Bool {
         guard settings.consentExternalAi else {
             let note = "Enable “Allow Redline to call external AI” in Settings before running an agent"
+            if let itemId, let live = inbox.item(id: itemId), live.status != .agentRunning {
+                inbox.updateStatus(id: itemId, status: .pending, proposalSummary: note)
+            }
+            lastMessage = note
+            appendLog("\(note)\n")
+            return false
+        }
+        return true
+    }
+
+    /// Auto-trigger Agent CLI requires a receiver API token so anonymous local POSTs cannot drive `--force` edits.
+    @discardableResult
+    private func ensureReceiverAuthForAutoAgent(
+        settings: AgentSettings,
+        inbox: InboxStore,
+        itemId: String?
+    ) -> Bool {
+        let token = settings.apiToken?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !token.isEmpty else {
+            let note = "Set Settings → API token before Agent CLI auto-run (blocks unauthenticated local POSTs)"
             if let itemId, let live = inbox.item(id: itemId), live.status != .agentRunning {
                 inbox.updateStatus(id: itemId, status: .pending, proposalSummary: note)
             }
@@ -432,10 +469,19 @@ final class AgentRunner: ObservableObject {
                 return
             }
         }
+        let label = settings.agentBackend.displayName
+        // CAS claim before marking local busy — closes MCP race window.
+        guard inbox.claimPendingAsRunning(
+            id: job.inboxItemId,
+            summary: "Running \(label)…"
+        ) else {
+            appendLog("Skipped run — claim failed (\(inbox.lastError ?? "not pending"))\n")
+            lastMessage = "Skipped — already claimed"
+            return
+        }
         runningJobIDs.insert(job.id)
         isBusy = true
         activeInboxItemId = job.inboxItemId
-        let label = settings.agentBackend.displayName
         // Fresh feedback run starts a new session (do not --continue).
         canContinueSession = false
         lastSessionProjectPath = nil
@@ -444,7 +490,6 @@ final class AgentRunner: ObservableObject {
         appendLog("Started \(Date().formatted(date: .abbreviated, time: .standard))\n")
         appendLog("Streaming live progress below…\n\n")
         beginRunActivity()
-        inbox.updateStatus(id: job.inboxItemId, status: .agentRunning, proposalSummary: "Running \(label)…")
         lastMessage = "Running \(label)…"
         defer {
             endRunActivity()
@@ -485,7 +530,7 @@ final class AgentRunner: ObservableObject {
 
         if agentResult.cancelled {
             let summary = "Stopped by user\n\(clipped)"
-            inbox.updateStatus(id: job.inboxItemId, status: .pending, proposalSummary: summary)
+            finalizeOwnedRun(inbox: inbox, id: job.inboxItemId, status: .pending, proposalSummary: summary)
             lastMessage = "Stopped"
             notify(title: "Redline agent", body: "Stopped")
             return
@@ -497,7 +542,7 @@ final class AgentRunner: ObservableObject {
 
         if !agentResult.success {
             let summary = "\(agentResult.message)\n\(clipped)"
-            inbox.updateStatus(id: job.inboxItemId, status: .failed, proposalSummary: summary)
+            finalizeOwnedRun(inbox: inbox, id: job.inboxItemId, status: .failed, proposalSummary: summary)
             lastMessage = agentResult.message
             notify(title: "Redline agent failed", body: agentResult.message)
             return
@@ -506,9 +551,24 @@ final class AgentRunner: ObservableObject {
         // Shell hook only opens/notifies — keep pending. CLI agents mark Finished.
         let doneStatus: InboxItem.Status = settings.agentBackend == .shellHook ? .pending : .applied
         let summary = "\(label) completed\n\(clipped)"
-        inbox.updateStatus(id: job.inboxItemId, status: doneStatus, proposalSummary: summary)
+        finalizeOwnedRun(inbox: inbox, id: job.inboxItemId, status: doneStatus, proposalSummary: summary)
         lastMessage = "\(label) completed"
         notify(title: "Redline agent", body: "\(label) completed")
+    }
+
+    /// Write terminal/pending status only while this runner still owns `agent_running`.
+    private func finalizeOwnedRun(
+        inbox: InboxStore,
+        id: String,
+        status: InboxItem.Status,
+        proposalSummary: String
+    ) {
+        guard let live = inbox.item(id: id) else { return }
+        guard live.status == .agentRunning else {
+            appendLog("Skipped status finalize — item already \(live.status.rawValue)\n")
+            return
+        }
+        inbox.updateStatus(id: id, status: status, proposalSummary: proposalSummary)
     }
 
     private func markSessionContinuable(projectPath: String) {

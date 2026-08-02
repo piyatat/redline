@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Host apps must declare INTERNET themselves (demo does). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

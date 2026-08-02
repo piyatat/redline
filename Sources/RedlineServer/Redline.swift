@@ -20,7 +20,8 @@ public enum Redline {
         runtimeNotes = notes
     }
 
-    /// Install Redline in the host app. Debug-only — call behind `#if DEBUG`.
+    /// Install Redline in the host app (Debug only — call behind `#if DEBUG`).
+    /// Starts designer capture (feedback POST) and, on iOS, the optional hierarchy TCP service.
     public static func install(
         screen: String = "app",
         spec: String? = nil,

@@ -217,13 +217,13 @@ enum RedlineCLI {
 
     private static func printUsage() {
         print("""
-        redline — CLI for Redline Mac receiver and inspector
+        redline — CLI for Redline Mac receiver (inbox / agents / MCP)
 
         Commands:
           health
           inbox list | inbox show <id> | inbox set-status <id> <status> [summary]
           agent run <id>
-          inspect ping [--port N]
+          inspect ping [--port N]   # optional iOS hierarchy TCP
           gates run [--workspace PATH] [--bundle PATH]
           cursor setup --project PATH [--package PATH] [--print-deeplink] [--open]
           mcp

@@ -23,6 +23,7 @@ referenceState: default
 | Usage       | Component  | Pin                          |
 | ----------- | ---------- | ---------------------------- |
 | Title       | Title      | size=lg                      |
+| Hero card   | Card       | elevation=2                  |
 | Leave design feedback | Button | color=red, fillWidth=true   |
 
 ## Copy

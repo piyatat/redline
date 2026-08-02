@@ -7,7 +7,6 @@ public struct DesignerMarkupView: View {
     @State private var currentTool = "pen"
     @State private var currentColor = "red"
     @State private var currentPoints: [CGPoint] = []
-    @State private var showComment = false
     @State private var toolbarVisible = true
 
     public init() {}
@@ -41,16 +40,14 @@ public struct DesignerMarkupView: View {
                         currentTool: $currentTool,
                         currentColor: $currentColor,
                         comment: $controller.markupComment,
-                        showComment: $showComment,
                         canUndo: !controller.strokes.isEmpty,
+                        isSaving: controller.isSaving,
+                        saveError: controller.saveError,
                         onUndo: { _ = controller.strokes.popLast() },
                         onClear: { controller.strokes = [] },
                         onHide: { toolbarVisible = false },
-                        onCancel: {
-                            showComment = false
-                            controller.showMarkup = false
-                        },
-                        onSave: { Task { await controller.saveMarkup() } }
+                        onCancel: { controller.cancelMarkup() },
+                        onSend: { Task { await controller.saveMarkup() } }
                     )
                     .padding(.horizontal, 12)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -68,6 +65,7 @@ public struct DesignerMarkupView: View {
                                 .shadow(color: .black.opacity(0.1), radius: 6, y: 1)
                         }
                         .buttonStyle(.plain)
+                        .disabled(controller.isSaving)
                         Spacer()
                     }
                     .padding(.horizontal, 12)
@@ -89,26 +87,55 @@ private struct MarkupToolbar: View {
     @Binding var currentTool: String
     @Binding var currentColor: String
     @Binding var comment: String
-    @Binding var showComment: Bool
     var canUndo: Bool
+    var isSaving: Bool
+    var saveError: String?
     var onUndo: () -> Void
     var onClear: () -> Void
     var onHide: () -> Void
     var onCancel: () -> Void
-    var onSave: () -> Void
+    var onSend: () -> Void
 
     private let hitSize: CGFloat = 40
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if showComment {
-                TextField("Comment for agent…", text: $comment)
+            HStack(alignment: .center, spacing: 8) {
+                TextField("Feedback for agent…", text: $comment)
                     .font(.subheadline)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .disabled(isSaving)
+
+                Button(action: onSend) {
+                    if isSaving {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(.white)
+                            .frame(minWidth: 64)
+                    } else {
+                        Text("Send")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.accentColor)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .disabled(isSaving)
+                .accessibilityLabel("Send feedback")
+            }
+
+            if let saveError, !saveError.isEmpty {
+                Text(saveError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 4)
             }
 
             VStack(spacing: 2) {
@@ -129,24 +156,18 @@ private struct MarkupToolbar: View {
                     colorSwatch("neutral", Color(white: 0.55))
                     Spacer(minLength: 0)
                 }
+                .disabled(isSaving)
 
-                // Line 2 — edit + comment + cancel/save + hide
+                // Line 2 — edit + cancel + hide
                 HStack(spacing: 2) {
                     Spacer(minLength: 0)
-                    iconButton("arrow.uturn.backward", enabled: canUndo, action: onUndo)
-                    iconButton("trash", enabled: canUndo, action: onClear)
-                    iconButton(
-                        showComment ? "text.bubble.fill" : "text.bubble",
-                        selected: showComment,
-                        action: { showComment.toggle() }
-                    )
+                    iconButton("arrow.uturn.backward", enabled: canUndo && !isSaving, action: onUndo)
+                    iconButton("trash", enabled: canUndo && !isSaving, action: onClear)
                     thinDivider
-                    iconButton("xmark", action: onCancel)
+                    iconButton("xmark", enabled: !isSaving, action: onCancel)
                         .accessibilityLabel("Cancel")
-                    iconButton("checkmark", tint: .accentColor, action: onSave)
-                        .accessibilityLabel("Save")
                     thinDivider
-                    iconButton("chevron.up", action: onHide)
+                    iconButton("chevron.up", enabled: !isSaving, action: onHide)
                         .accessibilityLabel("Hide toolbar")
                     Spacer(minLength: 0)
                 }
@@ -345,6 +366,21 @@ public struct DesignerRootModifier: ViewModifier {
                     DesignerMarkupView()
                 }
             }
+            .overlay {
+                if controller.isSaving && !controller.isCapturing {
+                    ZStack {
+                        Color.black.opacity(0.35).ignoresSafeArea()
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Saving…")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .allowsHitTesting(true)
+                }
+            }
             .onAppear {
                 DesignerModeController.shared.activate(
                     screen: screen,
@@ -361,30 +397,35 @@ private struct DesignerModeBanner: View {
     @ObservedObject private var regions = RegionRegistry.shared
 
     var body: some View {
-        if controller.isDesignerModeActive && !controller.showMarkup {
-            VStack(spacing: 8) {
-                Text(regions.hasAnnotatedRegions
-                     ? "Tap an orange region, or Whole screen"
-                     : "No regions tagged · use Whole screen")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.orange)
-                    .clipShape(Capsule())
+        if controller.isDesignerModeActive && !controller.showMarkup && !controller.isSaving {
+            // Clear full-bleed pass-through; only the pill / button receive hits.
+            Color.clear
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .overlay(alignment: .top) {
+                    VStack(spacing: 8) {
+                        Text(regions.hasAnnotatedRegions
+                             ? "Tap an orange region, or Whole screen"
+                             : "No regions tagged · use Whole screen")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Color.orange)
+                            .clipShape(Capsule())
 
-                Button {
-                    controller.beginScreenMarkup()
-                } label: {
-                    Label("Whole screen", systemImage: "rectangle.dashed")
-                        .font(.footnote.weight(.semibold))
+                        Button {
+                            controller.beginScreenMarkup()
+                        } label: {
+                            Label("Whole screen", systemImage: "rectangle.dashed")
+                                .font(.footnote.weight(.semibold))
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                    }
+                    .padding(.top, 8)
+                    .allowsHitTesting(true)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-
-                Spacer()
-            }
-            .padding(.top, 8)
         }
     }
 }

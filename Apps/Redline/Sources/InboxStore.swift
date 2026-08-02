@@ -100,19 +100,17 @@ final class InboxStore: ObservableObject {
             return false
         }
         let current = items[index].status
-        // Reject illegal reopen / reclaim transitions.
-        switch (current, status) {
-        case (.applied, .agentRunning), (.failed, .agentRunning):
-            lastError = "Cannot claim \(current.rawValue) item as agent_running"
-            return false
-        case (.agentRunning, .agentRunning):
-            // Idempotent reclaim OK — refresh summary if provided.
-            break
-        case (.applied, .applied), (.failed, .failed), (.pending, .pending):
-            break
-        default:
-            break
+        if status == .agentRunning {
+            // True CAS: only pending → agent_running. Already-running is a conflict (409),
+            // so a second waiter/owner cannot treat HTTP 200 as ownership.
+            guard current == .pending else {
+                lastError = current == .agentRunning
+                    ? "Already claimed (agent_running)"
+                    : "Cannot claim \(current.rawValue) item as agent_running"
+                return false
+            }
         }
+
         items[index].status = status
         let trimmed = summary?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !trimmed.isEmpty {
@@ -129,6 +127,24 @@ final class InboxStore: ObservableObject {
                 items[index].proposalSummary = "Returned to pending via Cursor MCP"
             }
         }
+        lastError = nil
+        persist()
+        return true
+    }
+
+    /// Local CLI claim — CAS `pending → agent_running`. Returns false if already claimed.
+    @discardableResult
+    func claimPendingAsRunning(id: String, summary: String) -> Bool {
+        guard let index = items.firstIndex(where: { $0.id == id }) else {
+            lastError = "Inbox item not found"
+            return false
+        }
+        guard items[index].status == .pending else {
+            lastError = "Item is \(items[index].status.rawValue) — cannot claim"
+            return false
+        }
+        items[index].status = .agentRunning
+        items[index].proposalSummary = summary
         lastError = nil
         persist()
         return true

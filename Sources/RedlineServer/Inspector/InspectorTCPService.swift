@@ -3,6 +3,7 @@ import Foundation
 import Network
 import RedlineShared
 
+/// Optional hierarchy TCP for CLI `inspect` / MCP `redline_get_tree` (not used by designer Send).
 public final class InspectorTCPService: @unchecked Sendable {
     public static let shared = InspectorTCPService()
 

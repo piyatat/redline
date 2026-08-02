@@ -258,7 +258,7 @@ public enum CursorDesktopIntegration {
     - **Redline.app** is running (receiver on `:8765`).
     - Settings → **When feedback arrives** = **Cursor desktop (MCP)** so Agent CLI is not auto-started.
     - Redline MCP server `redline` is enabled (project `.cursor/mcp.json` or Cursor Settings → MCP).
-    - Designer will Save a redline from the iOS app (or use Mac Inbox).
+    - Designer will **Send** a redline from the iOS or Android app (or use Mac Inbox).
 
     ## Steps
 

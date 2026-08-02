@@ -1,7 +1,8 @@
 import SwiftUI
 import RedlineShared
 
-/// LookIn-style layout: toolbar + hierarchy | preview | properties.
+/// Unused in the current Mac shell — hierarchy UI is not shown. Kept for optional revive / CLI-adjacent tooling.
+/// Layout: toolbar + hierarchy | preview | properties.
 struct InspectorWindow: View {
     @ObservedObject var connections: ConnectionManager
 

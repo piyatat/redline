@@ -320,17 +320,17 @@ struct AgentSettingsPanelView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Receiver")
                 .appFont(.headline)
-            Text("HTTP endpoint where the iOS app posts feedback. Binds loopback only (`127.0.0.1`). Simulator works out of the box; physical devices need a USB reverse tunnel to that port (stock `iproxy` is Mac→device only — see docs/device-setup.md). Set a token if other local processes share this Mac.")
+            Text("HTTP endpoint where host apps (iOS / Android) post feedback. Binds loopback only (`127.0.0.1`). Simulator / emulator work with loopback; physical devices need a reverse tunnel (`adb reverse` on Android, USB reverse on iOS — see docs/device-setup.md and docs/android-setup.md). Set a token if other local processes share this Mac.")
                 .appFont(.caption)
                 .foregroundStyle(.secondary)
 
-            SecureField("API token (optional)", text: optionalBinding(\.apiToken))
-            Text("Same value as `REDLINE_API_TOKEN` / scheme env on device. Not written into project `mcp.json`. Receiver binds loopback only.")
+            SecureField("API token", text: optionalBinding(\.apiToken))
+            Text("Required for Agent CLI auto-run. Optional for notify / MCP-await / manual Send. Same value as `REDLINE_API_TOKEN` on the device. Not written into project `mcp.json`.")
                 .appFont(.caption)
                 .foregroundStyle(.secondary)
 
             if settingsStore.settings.apiToken?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
-                Text("No token set — any local process can POST to the receiver. Set a token if other users share this Mac.")
+                Text("No token set — any local process can POST to the receiver. Agent CLI auto-run is blocked until you set one.")
                     .appFont(.caption)
                     .foregroundStyle(.orange)
             }

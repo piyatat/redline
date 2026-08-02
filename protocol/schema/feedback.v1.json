@@ -56,7 +56,12 @@
       }
     },
     "compositePngBase64": { "type": "string" },
-    "inspector": { "type": "object" }
+    "inspector": { "type": "object" },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional app/device/UI snapshot for agent investigation"
+    }
   },
   "additionalProperties": false
 }

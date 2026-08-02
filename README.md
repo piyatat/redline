@@ -1,42 +1,48 @@
 # Redline
 
-Debug-only UI inspector + designer redline capture for iOS, with a native **macOS app** receiver and agent auto-trigger.
+Debug-only **designer feedback** capture for **iOS** and **Android**: mark up a screen, **Send** to a native **macOS** Inbox, then trigger Cursor/Claude agents (CLI or MCP).
 
 ## Components
 
 | Module | Platform | Description |
 |--------|----------|-------------|
-| `RedlineShared` | iOS + macOS | Protocol models, wire codec, gates, agent prompts (SPM) |
-| `RedlineServer` | iOS | Embed in host apps — inspector + designer markup (SPM) |
-| `Apps/Redline` | macOS | **Redline.app** — Inbox · Agent receiver (`Redline.xcodeproj`) |
-| `redline` (CLI) | macOS | `inbox`, `inspect`, `gates`, `mcp` (SPM executable) |
-| `examples/iOSDemo` | iOS | Demo host app (`iOSDemo.xcworkspace`) |
+| `RedlineShared` | iOS + macOS | Protocol models, Feedback v1, gates, agent prompts (SPM) |
+| `RedlineServer` | iOS | Embed in host apps — designer markup → POST feedback (SPM) |
+| `android/redline-android` | Android | Debug capture library — Compose markup → Feedback v1 |
+| `Apps/Redline` | macOS | **Redline.app** — Inbox · HTTP receiver · agent wiring |
+| `redline` (CLI) | macOS | `inbox`, `gates`, `mcp`, optional `inspect` |
+| `examples/iOSDemo` | iOS | Demo host — `./scripts/run-ios-demo.sh` |
+| `examples/AndroidDemo` | Android | Demo host — `./scripts/run-android-demo.sh` (Gradle root: `android/`) |
 
-## Build
+## Build & run
 
 ```bash
 # Shared libraries + CLI
 swift build --product redline
 swift test
 
-# Mac app (Xcode project)
+# Mac app (build + launch receiver on 127.0.0.1:8765)
 ./scripts/run-mac-app.sh
-# or: open Apps/Redline/Redline.xcodeproj → scheme Redline → My Mac → Run
+# or: ./scripts/run-mac-app.sh --open   # Xcode only
 
-# iOS demo
+# iOS demo (build + Simulator)
 ./scripts/run-ios-demo.sh
-# or: open examples/iOSDemo/iOSDemo.xcworkspace → scheme iOSDemo → Simulator → Run
+# or: ./scripts/run-ios-demo.sh "iPhone 17"
+# or: ./scripts/run-ios-demo.sh --open
+
+# Android demo (build + install/launch if device online)
+./scripts/run-android-demo.sh
+# or: ./scripts/run-android-demo.sh --assemble-only
+# or: open android/ in Android Studio → run AndroidDemo
 ```
 
 ## End-to-end
 
-1. Run Mac app: `./scripts/run-mac-app.sh` → Run (listens on `:8765`)
-2. Run iOS demo: `./scripts/run-ios-demo.sh` → Simulator
-3. Designer: save redline on device → Mac **Inbox** (composite, comment, **Send to AI**)
-4. Configure **Settings** → Cursor Agent CLI or Claude Code CLI + project folder. See [docs/agent-wiring.md](docs/agent-wiring.md)
-5. USB devices / feedback forwarding: [docs/device-setup.md](docs/device-setup.md)
-
-> Inspector UI is temporarily hidden in the Mac app; CLI `inspect` / MCP `redline_get_tree` still work against a running host.
+1. Mac: `./scripts/run-mac-app.sh` (listens on `127.0.0.1:8765`)
+2. Host: `./scripts/run-ios-demo.sh` **or** `./scripts/run-android-demo.sh`
+3. Designer: mark up → **Send** → Mac **Inbox**
+4. Settings → Cursor Agent CLI / Claude Code / desktop MCP. See [docs/agent-wiring.md](docs/agent-wiring.md)
+5. Devices: [docs/device-setup.md](docs/device-setup.md) · Android: [docs/android-setup.md](docs/android-setup.md)
 
 ## Gates
 
@@ -58,15 +64,24 @@ Set `REDLINE_WORKSPACE_ROOT` (CLI/MCP) to the repo containing `scripts/gate-mani
 ```bash
 swift run redline health
 swift run redline inbox list
-swift run redline inspect ping --port 47164
 swift run redline mcp
 ```
 
-MCP tools: `redline_wait_for_feedback`, `redline_inbox_set_status`, `redline_inbox_*`, `redline_get_tree`, `redline_gates_run`.
+MCP tools: `redline_wait_for_feedback`, `redline_inbox_set_status`, `redline_inbox_*`, `redline_gates_run`, and (iOS host) `redline_get_tree`.
 
 Cursor desktop MCP + `/redline-wait`: Redline.app **Settings → When feedback arrives → Cursor desktop (MCP)**, then **Install into project…**. Or `swift run redline cursor setup --project …`.
 
 Full setup: [docs/agent-wiring.md](docs/agent-wiring.md) · example config: `.cursor/mcp.json.example`.
+
+### Optional — hierarchy TCP (iOS)
+
+Debug iOS hosts still expose a TCP hierarchy service used by CLI/`redline_get_tree`. There is **no** hierarchy inspector UI in Redline.app right now.
+
+```bash
+swift run redline inspect ping --port 47164
+```
+
+Ports and USB forwarding: [docs/device-setup.md](docs/device-setup.md). Android does not ship hierarchy TCP.
 
 ## Updates
 
@@ -74,11 +89,11 @@ Optional `REDLINE_APPCAST_URL` for distribution feeds (see [docs/appcast-setup.m
 
 ## Project status
 
-- [x] R1 — Mac app MVP + designer feedback
-- [x] R2 — Bridge, measure, live edit, SceneKit preview, export
+- [x] R1 — Mac Inbox + designer feedback
+- [x] R2 — Bridge / measure / live edit plumbing (Mac hierarchy UI not shown)
 - [x] R3 — CLI/MCP, HTTP `/inbox`
-- [x] R4 — Fast mode, console, per-node refresh, USB inspect ports, appcast docs, device docs
-- [ ] R5 — Android / web capture
+- [x] R4 — USB inspect ports, appcast docs, device docs
+- [x] R5 — Android Feedback v1 capture (Compose); web capture still open
 
 See the Redline implementation plan in the parent workspace (`doc/plan/`) when present.
 

@@ -3,6 +3,7 @@ import Foundation
 import Darwin
 #endif
 
+/// Client for the optional iOS hierarchy TCP service (`inspect` / `redline_get_tree`).
 public final class InspectorClient: @unchecked Sendable {
     public var connectionTimeout: TimeInterval = 1.5
 

@@ -158,11 +158,9 @@ final class MCPStdioServer {
                     deliveredIds.insert(candidate.id)
                     return claimed
                 } catch {
-                    // Do not mark delivered — retry claim on next poll / next wait call.
-                    throw RedlineHTTPError.badStatus(
-                        409,
-                        message: "Claim failed: \(error.localizedDescription)"
-                    )
+                    // Claim race / transient error — keep polling (do not mark delivered).
+                    Thread.sleep(forTimeInterval: 0.5)
+                    continue
                 }
             }
             Thread.sleep(forTimeInterval: 0.5)
@@ -259,10 +257,10 @@ final class MCPStdioServer {
         ),
         MCPTool(
             name: "redline_get_tree",
-            description: "Fetch live hierarchy from the iOS inspector",
+            description: "Fetch live view hierarchy from a running iOS debug host (TCP; optional)",
             inputSchema: MCPToolSchema(
                 properties: [
-                    "port": MCPToolProperty(type: "string", description: "Inspector TCP port"),
+                    "port": MCPToolProperty(type: "string", description: "Hierarchy TCP port (Simulator 47164–47169)"),
                 ],
                 required: []
             )

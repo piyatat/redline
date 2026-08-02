@@ -6,7 +6,7 @@ Wire designer feedback from **Redline.app** straight into an AI agent.
 
 ```mermaid
 flowchart LR
-  Save[iOS Save / Send to AI] --> App[Redline.app]
+  Save[iOS / Android Send] --> App[Redline.app]
   App --> Backend{agentBackend}
   Backend -->|cursor_cli| Cursor["agent -p --force stream-json"]
   Backend -->|claude_cli| Claude["claude -p acceptEdits"]
@@ -28,8 +28,9 @@ flowchart LR
 2. Launch **Redline.app** → **Settings** tab:
    - Under **When feedback arrives**, choose **Agent CLI** (or **Off — manual** / **Notify only**)
    - In the mode setup below: enable **Allow Redline to call external AI**, **Backend** = Cursor Agent CLI, **Project folder** = repo that owns your screen specs
+   - Set **API token** (required for Agent CLI auto-run; host apps must send the same bearer)
 
-3. Save a redline on device (or Inbox → **Send to AI**).
+3. **Send** a redline on device (or Inbox → **Send to AI**).
 
 Redline runs headless (streaming progress into the Agent log pane):
 
@@ -53,7 +54,7 @@ with `cwd` = your project folder. Feedback assets are copied to `<project>/.redl
    - **Project folder:** same repo as above
    - Optional **Claude agent path** if `claude` isn’t on PATH
 
-3. Save / **Send to AI**.
+3. **Send** / Inbox → **Send to AI**.
 
 Redline runs:
 
@@ -70,7 +71,7 @@ Settings shows one mode at a time (setup fields swap with the selection). Receiv
 | Mode (Settings title) | Behavior |
 |------|----------|
 | **Cursor desktop (MCP)** | Store + notify; **never** auto-runs Agent CLI — use with `/redline-wait` so the desktop agent (and its MCP plugins) handle the work |
-| **Agent CLI** | Auto-run Cursor/Claude/shell backend after Save (requires consent). Don’t combine with `/redline-wait` or you’ll double-trigger |
+| **Agent CLI** | Auto-run Cursor/Claude/shell backend after **Send** (requires consent). Don’t combine with `/redline-wait` or you’ll double-trigger |
 | **Notify only** | Store bundle + macOS notification; no agent until **Send to AI** |
 | **Off — manual** | Store bundle only; use **Send to AI** manually |
 
@@ -80,10 +81,10 @@ Env override: `REDLINE_ON_NEW_FEEDBACK=off|notify|await_desktop_mcp|trigger_agen
 
 | Status | Meaning |
 |--------|---------|
-| Pending | Waiting / stopped / hook ran |
-| Running | Agent CLI or Cursor MCP `/redline-wait` in progress |
+| Pending | Waiting / stopped / hook ran (`pending`) |
+| Running | Agent CLI or Cursor MCP `/redline-wait` in progress (`agent_running`) |
 | Finished | Work completed (`applied`) |
-| Failed | Agent or bundle error |
+| Failed | Agent or bundle error (`failed`) |
 
 **Cursor MCP:** `redline_wait_for_feedback` marks the item **Running**. When finished, the agent must call **`redline_inbox_set_status`** with `applied` or `failed` (optional `summary`). CLI: `redline inbox set-status <id> applied "…"`.
 
@@ -99,7 +100,7 @@ Agent output is stored on the inbox item and in `agent-hook.log` next to the bun
 
 ## Runtime context (host apps)
 
-On Save, Redline attaches an automatic `runtime` block (app/version, device/OS, VC stack, call stack). Host apps can add:
+On **Send**, Redline attaches an automatic `runtime` block (app/version, device/OS, VC stack, call stack). Host apps can add:
 
 ```swift
 Redline.runtimeUserInfo = ["userId": "…", "env": "staging"]
@@ -132,7 +133,7 @@ Use the **desktop** Agent when you need desktop MCP plugins that the headless CL
    - appends `.redline-feedback/` and `.cursor/mcp.json` to `.gitignore` when missing
 5. Optional: **Open MCP install in Cursor** — one-click deeplink confirm dialog.
 
-Then in Cursor: enable the `redline` MCP server if prompted, run **`/redline-wait`**, and Save a redline on device while Redline.app is listening. On Save, Redline stages assets into `<Project folder>/.redline-feedback/`.
+Then in Cursor: enable the `redline` MCP server if prompted, run **`/redline-wait`**, and **Send** a redline on device while Redline.app is listening. On Send, Redline stages assets into `<Project folder>/.redline-feedback/`.
 
 ### From CLI
 
@@ -144,7 +145,7 @@ swift run redline cursor setup --project /path/to/app/repo --package /path/to/re
 
 ```mermaid
 flowchart LR
-  Save[iOS Save] --> App[Redline.app Inbox]
+  Save[iOS / Android Send] --> App[Redline.app Inbox]
   Cmd["/redline-wait"] --> MCP[redline_wait_for_feedback]
   MCP --> App
   MCP --> Agent[Cursor desktop Agent]
@@ -164,7 +165,9 @@ CLI equivalent: `swift run redline agent run <inbox-id>` with `REDLINE_AGENT_HOO
 
 ---
 
-## API token (optional)
+## API token
+
+**Required** for **Agent CLI auto-run** (Settings → When feedback arrives → Agent CLI). Optional for notify / MCP-await / manual Send.
 
 If Settings → **API token** is set on the Mac app, **all** clients must send the same bearer (`POST /feedback`, `GET /health`, `GET /inbox`):
 
@@ -173,6 +176,7 @@ export REDLINE_API_TOKEN=your-token
 ```
 
 - iOS: set in the scheme environment
+- Android: `Redline.install(…, apiToken = "…")` (preferred) or process/instrumentation `REDLINE_API_TOKEN`
 - CLI: picks up `REDLINE_API_TOKEN` automatically (`swift run redline health`)
 - Cursor MCP: set the env var in Cursor’s MCP server config UI — **Install into project does not write tokens** into `.cursor/mcp.json` (avoids committing secrets)
 

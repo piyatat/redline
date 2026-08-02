@@ -192,7 +192,7 @@ struct InboxPanelView: View {
             if inbox.items.isEmpty {
                 emptyState(
                     title: "No feedback yet",
-                    subtitle: "Save a redline on the iOS device to land it here."
+                    subtitle: "Save a redline on iOS or Android to land it here."
                 )
             } else if filteredItems.isEmpty {
                 emptyState(
