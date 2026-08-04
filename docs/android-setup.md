@@ -2,6 +2,8 @@
 
 Redline Android captures designer feedback (Feedback v1) and POSTs it to **Redline.app** on the Mac — same protocol as iOS.
 
+**Integrating into your own app?** Start with **[integration.md](integration.md)** (Quick start + full Gradle / Compose steps). This page is for the **AndroidDemo** in this repo.
+
 ## Open the project
 
 ```bash
@@ -57,6 +59,10 @@ adb reverse tcp:8765 tcp:8765
 Without the right host (`10.0.2.2` on emulator, or `adb reverse` on device), POSTs never reach Redline.app.
 
 ## Host app integration
+
+See **[integration.md](integration.md)** for the full host-app guide (Gradle include, cleartext, `Redline.install`, `DesignerOverlay`, regions, tokens).
+
+Short version for this demo:
 
 ```kotlin
 // Application.onCreate() — Debug builds only

@@ -2,6 +2,8 @@
 
 Day-to-day Redline is **designer Send → Mac Inbox**. Redline.app’s receiver binds **loopback only** (`127.0.0.1:8765` on the Mac). iOS Simulator and Android physical devices (via `adb reverse`) POST to that URL; the **Android emulator** POSTs to `http://10.0.2.2:8765/feedback` (guest alias for the Mac).
 
+**New host app?** See **[integration.md](integration.md)** for iOS SPM / Android Gradle wiring.
+
 ## Simulator / emulator (default)
 
 ```bash

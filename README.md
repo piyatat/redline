@@ -2,6 +2,16 @@
 
 Debug-only **designer feedback** capture for **iOS** and **Android**: mark up a screen, **Send** to a native **macOS** Inbox, then trigger Cursor/Claude agents (CLI or MCP).
 
+## Integrate into your app
+
+**[docs/integration.md](docs/integration.md)** — Quick start + full iOS (SPM) / Android (Gradle) setup.
+
+```bash
+./scripts/run-mac-app.sh   # Mac Inbox receiver first
+```
+
+Then add `RedlineServer` (iOS) or `:redline-android` (Android Debug), call `Redline.install`, wrap the root UI, tag regions, **Send**.
+
 ## Components
 
 | Module | Platform | Description |
@@ -40,10 +50,10 @@ swift test
 ## End-to-end
 
 1. Mac: `./scripts/run-mac-app.sh` (listens on `127.0.0.1:8765`)
-2. Host: `./scripts/run-ios-demo.sh` **or** `./scripts/run-android-demo.sh`
+2. Host: integrate your app ([docs/integration.md](docs/integration.md)) **or** run `./scripts/run-ios-demo.sh` / `./scripts/run-android-demo.sh`
 3. Designer: mark up → **Send** → Mac **Inbox** (composite PNG includes baked strokes)
 4. Settings → Cursor Agent CLI / Claude Code / desktop MCP. See [docs/agent-wiring.md](docs/agent-wiring.md)
-5. Devices: [docs/device-setup.md](docs/device-setup.md) · Android: [docs/android-setup.md](docs/android-setup.md)
+5. Devices: [docs/device-setup.md](docs/device-setup.md) · Android demo: [docs/android-setup.md](docs/android-setup.md)
 
 ## Gates
 

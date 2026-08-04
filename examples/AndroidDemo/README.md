@@ -10,4 +10,4 @@ Open **`redline/android`** in Android Studio (the folder that contains `settings
 ./scripts/run-android-demo.sh
 ```
 
-See [docs/android-setup.md](../docs/android-setup.md).
+See [docs/android-setup.md](../docs/android-setup.md) · host apps: [docs/integration.md](../docs/integration.md).

@@ -2,6 +2,8 @@
 
 Wire designer feedback from **Redline.app** straight into an AI agent.
 
+Host apps must already POST feedback — see **[integration.md](integration.md)** if you have not added Redline to iOS/Android yet.
+
 ## Primary: Cursor Agent CLI or Claude Code CLI
 
 ```mermaid
