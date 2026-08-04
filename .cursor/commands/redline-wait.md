@@ -8,7 +8,7 @@ Prerequisites: Redline.app running; Settings → When feedback arrives = **Curso
 
 1. Ensure the `redline` MCP server is available.
 2. Call **`redline_wait_for_feedback`** with `timeoutSeconds` = `300`.
-3. When feedback arrives, read `.redline-feedback/prompt.md` and `.redline-feedback/composite.png` (PNG is not in the MCP JSON).
+3. When feedback arrives, read `.redline-feedback/prompt.md` and `.redline-feedback/composite.png` (PNG is not in the MCP JSON; markup strokes are already baked into the image).
 4. Apply the requested change in this project. Use other MCP tools if needed.
 5. Call **`redline_inbox_set_status`** with `id` from step 2, `status` = `applied` (or `failed`), and a short `summary`.
 6. Report what you changed.

@@ -59,7 +59,7 @@ public struct AgentPromptBuilder {
             lines.append("- **Screenshot:** `\(pngURL.path)`")
             lines.append("- **Raw JSON:** `\(jsonURL.path)`")
             lines.append("")
-            lines.append("Open the screenshot and apply the designer comment to the spec.")
+            lines.append("Open the screenshot (markup strokes are baked into the PNG) and apply the designer comment to the spec.")
             lines.append("Use the runtime context (VC stack / call stack / app info) to locate the right screen and files.")
             lines.append("")
         }

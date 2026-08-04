@@ -12,7 +12,7 @@ Debug-only **designer feedback** capture for **iOS** and **Android**: mark up a 
 | `Apps/Redline` | macOS | **Redline.app** — Inbox · HTTP receiver · agent wiring |
 | `redline` (CLI) | macOS | `inbox`, `gates`, `mcp`, optional `inspect` |
 | `examples/iOSDemo` | iOS | Demo host — `./scripts/run-ios-demo.sh` |
-| `examples/AndroidDemo` | Android | Demo host — `./scripts/run-android-demo.sh` (Gradle root: `android/`) |
+| `android/AndroidDemo` | Android | Demo host — `./scripts/run-android-demo.sh` (open `android/` in Android Studio) |
 
 ## Build & run
 
@@ -34,13 +34,14 @@ swift test
 ./scripts/run-android-demo.sh
 # or: ./scripts/run-android-demo.sh --assemble-only
 # or: open android/ in Android Studio → run AndroidDemo
+# Emulator → 10.0.2.2:8765; device → 127.0.0.1 + adb reverse
 ```
 
 ## End-to-end
 
 1. Mac: `./scripts/run-mac-app.sh` (listens on `127.0.0.1:8765`)
 2. Host: `./scripts/run-ios-demo.sh` **or** `./scripts/run-android-demo.sh`
-3. Designer: mark up → **Send** → Mac **Inbox**
+3. Designer: mark up → **Send** → Mac **Inbox** (composite PNG includes baked strokes)
 4. Settings → Cursor Agent CLI / Claude Code / desktop MCP. See [docs/agent-wiring.md](docs/agent-wiring.md)
 5. Devices: [docs/device-setup.md](docs/device-setup.md) · Android: [docs/android-setup.md](docs/android-setup.md)
 

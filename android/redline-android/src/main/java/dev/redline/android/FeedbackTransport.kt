@@ -7,6 +7,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.net.ConnectException
 import java.util.concurrent.TimeUnit
 
 class FeedbackTransport private constructor() {
@@ -41,13 +42,28 @@ class FeedbackTransport private constructor() {
             .post(body)
             .header("Content-Type", "application/json")
         resolveApiToken()?.let { builder.header("Authorization", "Bearer $it") }
-        val response = client.newCall(builder.build()).execute()
-        response.use {
-            if (!it.isSuccessful) {
-                throw FeedbackTransportException("Feedback POST failed with HTTP ${it.code}")
+        try {
+            val response = client.newCall(builder.build()).execute()
+            response.use {
+                if (!it.isSuccessful) {
+                    throw FeedbackTransportException("Feedback POST failed with HTTP ${it.code}")
+                }
             }
+            Log.i(TAG, "feedback OK → $baseUrl")
+        } catch (e: FeedbackTransportException) {
+            throw e
+        } catch (e: ConnectException) {
+            throw FeedbackTransportException(connectFailureMessage(baseUrl), e)
+        } catch (e: java.net.SocketTimeoutException) {
+            throw FeedbackTransportException(connectFailureMessage(baseUrl), e)
+        } catch (e: java.io.IOException) {
+            // OkHttp often wraps ConnectException.
+            val root = generateSequence(e as Throwable) { it.cause }.firstOrNull { it is ConnectException }
+            if (root != null) {
+                throw FeedbackTransportException(connectFailureMessage(baseUrl), e)
+            }
+            throw FeedbackTransportException("${e.message ?: "Network error"} ($baseUrl)", e)
         }
-        Log.i(TAG, "feedback OK → $baseUrl")
         Unit
     }
 
@@ -60,10 +76,28 @@ class FeedbackTransport private constructor() {
             val fromEnv = System.getenv(RedlineDefines.ENV_FEEDBACK_URL)
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
-            return fromEnv ?: RedlineDefines.DEFAULT_FEEDBACK_URL
+            if (fromEnv != null) return fromEnv
+            // Emulator: 10.0.2.2 → host Mac loopback. Device: 127.0.0.1 via adb reverse.
+            return if (RedlineDefines.isEmulator()) {
+                RedlineDefines.EMULATOR_HOST_FEEDBACK_URL
+            } else {
+                RedlineDefines.DEFAULT_FEEDBACK_URL
+            }
         }
 
         fun apiToken(): String? = shared.resolveApiToken()
+
+        private fun connectFailureMessage(url: String): String {
+            val hint = when {
+                url.contains("127.0.0.1") && RedlineDefines.isEmulator() ->
+                    " Emulator cannot use 127.0.0.1 for the Mac — reinstall so Redline defaults to 10.0.2.2."
+                url.contains("127.0.0.1") ->
+                    " On a physical device run: adb reverse tcp:8765 tcp:8765"
+                else ->
+                    " Is Redline.app running on the Mac (127.0.0.1:8765)?"
+            }
+            return "Failed to connect to $url.$hint"
+        }
     }
 
     private fun resolveApiToken(): String? =
@@ -73,4 +107,7 @@ class FeedbackTransport private constructor() {
                 ?.takeIf { it.isNotEmpty() }
 }
 
-class FeedbackTransportException(message: String) : Exception(message)
+class FeedbackTransportException(
+    message: String,
+    cause: Throwable? = null,
+) : Exception(message, cause)

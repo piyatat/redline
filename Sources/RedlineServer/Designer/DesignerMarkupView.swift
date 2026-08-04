@@ -20,7 +20,7 @@ public struct DesignerMarkupView: View {
         let region = controller.activeRegion ?? DesignerModeController.screenRegionName
 
         ZStack {
-            if !isWholeScreen {
+            if !isWholeScreen && !controller.isCapturing {
                 Color.black.opacity(0.28).ignoresSafeArea()
             }
 
@@ -34,42 +34,44 @@ public struct DesignerMarkupView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                if toolbarVisible {
-                    MarkupToolbar(
-                        regionLabel: region,
-                        currentTool: $currentTool,
-                        currentColor: $currentColor,
-                        comment: $controller.markupComment,
-                        canUndo: !controller.strokes.isEmpty,
-                        isSaving: controller.isSaving,
-                        saveError: controller.saveError,
-                        onUndo: { _ = controller.strokes.popLast() },
-                        onClear: { controller.strokes = [] },
-                        onHide: { toolbarVisible = false },
-                        onCancel: { controller.cancelMarkup() },
-                        onSend: { Task { await controller.saveMarkup() } }
-                    )
-                    .padding(.horizontal, 12)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                } else {
-                    HStack {
-                        Button {
-                            toolbarVisible = true
-                        } label: {
-                            Label("Show tools", systemImage: "chevron.down")
-                                .font(.caption.weight(.semibold))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Capsule())
-                                .shadow(color: .black.opacity(0.1), radius: 6, y: 1)
+                if !controller.isCapturing {
+                    if toolbarVisible {
+                        MarkupToolbar(
+                            regionLabel: region,
+                            currentTool: $currentTool,
+                            currentColor: $currentColor,
+                            comment: $controller.markupComment,
+                            canUndo: !controller.strokes.isEmpty,
+                            isSaving: controller.isSaving,
+                            saveError: controller.saveError,
+                            onUndo: { _ = controller.strokes.popLast() },
+                            onClear: { controller.strokes = [] },
+                            onHide: { toolbarVisible = false },
+                            onCancel: { controller.cancelMarkup() },
+                            onSend: { Task { await controller.saveMarkup() } }
+                        )
+                        .padding(.horizontal, 12)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    } else {
+                        HStack {
+                            Button {
+                                toolbarVisible = true
+                            } label: {
+                                Label("Show tools", systemImage: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(Capsule())
+                                    .shadow(color: .black.opacity(0.1), radius: 6, y: 1)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(controller.isSaving)
+                            Spacer()
                         }
-                        .buttonStyle(.plain)
-                        .disabled(controller.isSaving)
-                        Spacer()
+                        .padding(.horizontal, 12)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    .padding(.horizontal, 12)
-                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
                 Spacer(minLength: 0)
@@ -77,6 +79,7 @@ public struct DesignerMarkupView: View {
             // Keep chrome below status bar / Dynamic Island so controls stay tappable.
             .padding(.top, 4)
             .animation(.easeInOut(duration: 0.2), value: toolbarVisible)
+            .animation(.easeInOut(duration: 0.15), value: controller.isCapturing)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

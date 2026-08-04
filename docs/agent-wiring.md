@@ -206,7 +206,7 @@ Prefer the [Cursor desktop setup](#cursor-desktop-mcp--wait-skill). After `swift
 
 If no binary exists, install falls back to `swift run --package-path … redline mcp`.
 
-Then: `redline_wait_for_feedback` → read `.redline-feedback/` → edit → **`redline_inbox_set_status`** (`applied` / `failed`). Slash command: `/redline-wait`. MCP JSON omits the PNG base64 (`compositeOmitted`); open `composite.png` on disk.
+Then: `redline_wait_for_feedback` → read `.redline-feedback/` → edit → **`redline_inbox_set_status`** (`applied` / `failed`). Slash command: `/redline-wait`. MCP JSON omits the PNG base64 (`compositeOmitted`); open `composite.png` on disk (screenshot with markup strokes already baked in).
 
 CLI:
 

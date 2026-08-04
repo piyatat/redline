@@ -119,14 +119,14 @@ public final class DesignerModeController: ObservableObject {
         let strokeSnapshot = strokes
         let toolsSnapshot = Array(toolsUsed)
 
-        // Hide markup chrome so the composite is the underlying UI (strokes stay in JSON).
+        // Hide markup chrome for a clean UI shot, then bake strokes into the PNG for Mac/agent.
         // isCapturing suppresses Saving overlay + region outlines for the snapshot window.
         showMarkup = false
         isCapturing = true
         await Task.yield()
         try? await Task.sleep(nanoseconds: 50_000_000)
 
-        let snapshot = SnapshotRenderer.captureKeyWindowPNGBase64()
+        let snapshot = SnapshotRenderer.captureKeyWindowPNGBase64(strokes: strokeSnapshot)
         isCapturing = false
         // Allow Saving overlay to appear for the POST phase.
         await Task.yield()

@@ -52,7 +52,9 @@ data class FeedbackPayload(
     val comment: String,
     val pins: List<DesignerPin> = emptyList(),
     val toolsUsed: List<String> = emptyList(),
+    /** Vector strokes (also rasterized into [compositePngBase64] on device before POST). */
     val strokes: List<MarkupStroke> = emptyList(),
+    /** Base64 PNG with markup strokes baked in — Mac Inbox and agents display this as-is. */
     val compositePngBase64: String,
     val runtime: AppRuntimeContext? = null,
 ) {

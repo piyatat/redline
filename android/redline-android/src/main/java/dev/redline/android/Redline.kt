@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * Debug-only designer capture for Android (markup → Feedback v1 → Redline.app).
  * No hierarchy TCP — that remains iOS-only.
+ * Two-finger long-press (~450ms) toggles designer mode (same as iOS).
  */
 object Redline {
     private const val TAG = "Redline"
@@ -80,8 +81,11 @@ object Redline {
         )
         application.registerActivityLifecycleCallbacks(activityCallbacks)
         installed = true
-        Log.i(TAG, "installed → ${FeedbackTransport.shared.baseUrl}")
-    }
+        Log.i(
+            TAG,
+            "installed → ${FeedbackTransport.shared.baseUrl}" +
+                if (RedlineDefines.isEmulator()) " (emulator→host)" else " (device; use adb reverse)",
+        )    }
 
     fun updateScreen(screen: String, spec: String? = null, state: String? = null) {
         if (!installed) return
@@ -109,9 +113,16 @@ object Redline {
     private val activityCallbacks = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityResumed(activity: Activity) {
             activityRef.set(activity)
+            // Post so we wrap after Activity / AndroidX finish setting Window.Callback.
+            activity.window?.decorView?.post {
+                if (activityRef.get() === activity) {
+                    DesignerGestureInstaller.attachTo(activity)
+                }
+            }
         }
 
         override fun onActivityPaused(activity: Activity) {
+            DesignerGestureInstaller.detachFrom(activity)
             if (activityRef.get() === activity) activityRef.set(null)
         }
 
@@ -120,6 +131,7 @@ object Redline {
         override fun onActivityStopped(activity: Activity) {}
         override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
         override fun onActivityDestroyed(activity: Activity) {
+            DesignerGestureInstaller.detachFrom(activity)
             if (activityRef.get() === activity) activityRef.set(null)
         }
     }
@@ -232,7 +244,7 @@ object DesignerModeController {
         val strokeSnapshot = strokes.toList()
         val tools = toolsUsed.distinct()
 
-        // Hide markup chrome so the composite is the underlying UI (strokes stay in JSON).
+        // Hide markup chrome for a clean UI shot, then bake strokes into the PNG for Mac/agent.
         showMarkup = false
         isCapturing = true
         val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -243,7 +255,7 @@ object DesignerModeController {
                 isCapturing = false
                 return@Runnable
             }
-            val composite = SnapshotRenderer.captureDecorViewPngBase64()
+            val composite = SnapshotRenderer.captureDecorViewPngBase64(strokeSnapshot)
             isCapturing = false
             if (composite.isNullOrBlank()) {
                 showMarkup = true
@@ -335,7 +347,13 @@ object RegionRegistry {
 }
 
 object SnapshotRenderer {
-    fun captureDecorViewPngBase64(): String? {
+    private const val StrokeWidthPx = 3f
+
+    /**
+     * Captures the activity window, then draws [strokes] into the PNG so Mac/agent
+     * receive markup visually (not only as JSON vectors).
+     */
+    fun captureDecorViewPngBase64(strokes: List<MarkupStroke> = emptyList()): String? {
         val activity = Redline.currentActivity() ?: return null
         val view = activity.window?.decorView ?: return null
         if (view.width <= 0 || view.height <= 0) {
@@ -351,10 +369,91 @@ object SnapshotRenderer {
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         view.draw(canvas)
+
+        if (strokes.isNotEmpty()) {
+            // Compose overlay is rooted at the content view; map stroke coords into decor space.
+            val content = activity.findViewById<View>(android.R.id.content)
+            val origin = IntArray(2)
+            content?.getLocationInWindow(origin)
+            val ox = origin[0].toFloat()
+            val oy = origin[1].toFloat()
+            drawStrokes(canvas, strokes, ox, oy)
+        }
+
         val stream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
         bitmap.recycle()
         return Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+    }
+
+    private fun drawStrokes(
+        canvas: Canvas,
+        strokes: List<MarkupStroke>,
+        offsetX: Float,
+        offsetY: Float,
+    ) {
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            style = android.graphics.Paint.Style.STROKE
+            strokeWidth = StrokeWidthPx
+            strokeCap = android.graphics.Paint.Cap.ROUND
+            strokeJoin = android.graphics.Paint.Join.ROUND
+        }
+        for (stroke in strokes) {
+            paint.color = strokeColor(stroke.color)
+            val pts = stroke.points.mapNotNull { pair ->
+                if (pair.size < 2) null
+                else android.graphics.PointF(pair[0].toFloat() + offsetX, pair[1].toFloat() + offsetY)
+            }
+            if (pts.isEmpty()) continue
+            when (stroke.tool) {
+                "rect" -> {
+                    val a = pts.first()
+                    val b = pts.last()
+                    canvas.drawRect(
+                        minOf(a.x, b.x),
+                        minOf(a.y, b.y),
+                        maxOf(a.x, b.x),
+                        maxOf(a.y, b.y),
+                        paint,
+                    )
+                }
+                "arrow" -> {
+                    val a = pts.first()
+                    val b = pts.last()
+                    canvas.drawLine(a.x, a.y, b.x, b.y, paint)
+                    val angle = kotlin.math.atan2((b.y - a.y).toDouble(), (b.x - a.x).toDouble())
+                    val head = 14.0
+                    canvas.drawLine(
+                        b.x,
+                        b.y,
+                        (b.x - head * kotlin.math.cos(angle - Math.PI / 6)).toFloat(),
+                        (b.y - head * kotlin.math.sin(angle - Math.PI / 6)).toFloat(),
+                        paint,
+                    )
+                    canvas.drawLine(
+                        b.x,
+                        b.y,
+                        (b.x - head * kotlin.math.cos(angle + Math.PI / 6)).toFloat(),
+                        (b.y - head * kotlin.math.sin(angle + Math.PI / 6)).toFloat(),
+                        paint,
+                    )
+                }
+                else -> {
+                    if (pts.size < 2) continue
+                    val path = android.graphics.Path().apply {
+                        moveTo(pts.first().x, pts.first().y)
+                        for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
+                    }
+                    canvas.drawPath(path, paint)
+                }
+            }
+        }
+    }
+
+    private fun strokeColor(id: String): Int = when (id) {
+        "green" -> 0xFF34C759.toInt()
+        "neutral" -> 0xFF737373.toInt()
+        else -> 0xFFFF3B30.toInt()
     }
 }
 

@@ -76,7 +76,9 @@ public struct FeedbackPayload: Codable, Equatable, Sendable {
     public var comment: String
     public var pins: [DesignerPin]
     public var toolsUsed: [String]
+    /// Vector strokes (also rasterized into `compositePngBase64` on the device before POST).
     public var strokes: [MarkupStroke]
+    /// Base64 PNG with markup strokes baked in — Mac Inbox and agents display this as-is.
     public var compositePngBase64: String
     public var inspector: InspectorBridgePayload?
     /// App / device / UI stack snapshot for agent investigation.

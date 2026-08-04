@@ -320,7 +320,7 @@ struct AgentSettingsPanelView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Receiver")
                 .appFont(.headline)
-            Text("HTTP endpoint where host apps (iOS / Android) post feedback. Binds loopback only (`127.0.0.1`). Simulator / emulator work with loopback; physical devices need a reverse tunnel (`adb reverse` on Android, USB reverse on iOS — see docs/device-setup.md and docs/android-setup.md). Set a token if other local processes share this Mac.")
+            Text("HTTP endpoint where host apps (iOS / Android) post feedback. Binds loopback only (`127.0.0.1`). iOS Simulator reaches this directly. Android emulator uses `10.0.2.2` (host alias). Physical devices need a reverse tunnel (`adb reverse` on Android — see docs/device-setup.md and docs/android-setup.md). Set a token if other local processes share this Mac.")
                 .appFont(.caption)
                 .foregroundStyle(.secondary)
 

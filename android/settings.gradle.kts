@@ -17,4 +17,3 @@ dependencyResolutionManagement {
 rootProject.name = "redline-android"
 include(":redline-android")
 include(":AndroidDemo")
-project(":AndroidDemo").projectDir = file("../examples/AndroidDemo")

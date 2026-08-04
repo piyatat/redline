@@ -37,6 +37,7 @@
     "toolsUsed": { "type": "array", "items": { "type": "string" } },
     "strokes": {
       "type": "array",
+      "description": "Vector strokes (also drawn into compositePngBase64 on the device before POST)",
       "items": {
         "type": "object",
         "required": ["tool", "color", "points"],
@@ -55,7 +56,10 @@
         }
       }
     },
-    "compositePngBase64": { "type": "string" },
+    "compositePngBase64": {
+      "type": "string",
+      "description": "Base64 PNG of the screen with markup strokes baked in — Mac Inbox and agents display this as-is"
+    },
     "inspector": { "type": "object" },
     "runtime": {
       "type": "object",

@@ -267,6 +267,7 @@ public enum CursorDesktopIntegration {
        - On success the Mac Inbox item is marked **Running** (`agent_running`).
     2. When it returns, note `id`, `screen`, `region`, `comment`, `spec`, `runtime`, and `bundleDirectory`.
        - Composite PNG is omitted from MCP JSON (`compositeOmitted: true`) — read the image from disk.
+       - `composite.png` already includes baked markup strokes (Mac displays it as-is).
     3. Optionally call **`redline_inbox_show`** with that `id` if you need details again.
     4. Read staged feedback assets (preferred):
        - `.redline-feedback/prompt.md`

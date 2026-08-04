@@ -6,7 +6,10 @@
 # Assemble only (no install):
 #   ./scripts/run-android-demo.sh --assemble-only
 #
-# Gradle root is android/; demo sources live in examples/AndroidDemo.
+# Networking: emulator defaults to 10.0.2.2:8765 (host Mac). Physical devices use
+# 127.0.0.1 + adb reverse (script always runs reverse; harmless on emulator).
+# Gradle root is android/ (modules :redline-android and :AndroidDemo).
+# Open android/ in Android Studio — not a nested module folder alone.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/android"
@@ -25,7 +28,7 @@ echo "Building :redline-android + :AndroidDemo…"
 ./gradlew :redline-android:assembleDebug :AndroidDemo:assembleDebug "$@"
 
 if [[ "$ASSEMBLE_ONLY" -eq 1 ]]; then
-  echo "Assemble-only done. APK under examples/AndroidDemo/build/outputs/apk/debug/"
+  echo "Assemble-only done. APK under android/AndroidDemo/build/outputs/apk/debug/"
   exit 0
 fi
 
@@ -43,14 +46,14 @@ if [[ -z "$DEVICES" ]]; then
   cat <<'EOF'
 No adb device/emulator online.
   1. Start an emulator (or plug in a device)
-  2. adb reverse tcp:8765 tcp:8765
-  3. Re-run: ./scripts/run-android-demo.sh
+  2. Re-run: ./scripts/run-android-demo.sh
+     Emulator → 10.0.2.2 automatically; device → script runs adb reverse
      or: cd android && ./gradlew :AndroidDemo:installDebug
 EOF
   exit 0
 fi
 
-echo "adb reverse tcp:8765 tcp:8765"
+echo "adb reverse tcp:8765 tcp:8765  (needed for physical devices; optional on emulator)"
 "$ADB" reverse tcp:8765 tcp:8765 || true
 
 echo "Installing + launching AndroidDemo…"

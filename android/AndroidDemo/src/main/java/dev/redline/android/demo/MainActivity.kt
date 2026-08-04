@@ -79,7 +79,7 @@ private fun DemoHomeScreen() {
                 if (designerActive) {
                     "Tap a region or Whole screen to markup."
                 } else {
-                    "Tap Enter designer, then pick a region or whole screen."
+                    "Two-finger long-press (or Enter designer), then pick a region."
                 },
                 color = Color.Gray,
                 textAlign = TextAlign.Center,

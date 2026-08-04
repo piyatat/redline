@@ -1,6 +1,6 @@
 # Device setup
 
-Day-to-day Redline is **designer Send → Mac Inbox**. Feedback POSTs to **`http://127.0.0.1:8765/feedback`**. Redline.app’s receiver binds **loopback only**.
+Day-to-day Redline is **designer Send → Mac Inbox**. Redline.app’s receiver binds **loopback only** (`127.0.0.1:8765` on the Mac). iOS Simulator and Android physical devices (via `adb reverse`) POST to that URL; the **Android emulator** POSTs to `http://10.0.2.2:8765/feedback` (guest alias for the Mac).
 
 ## Simulator / emulator (default)
 
@@ -12,7 +12,8 @@ Day-to-day Redline is **designer Send → Mac Inbox**. Feedback POSTs to **`http
 ```
 
 - iOS Simulator reaches Mac loopback automatically.
-- Android needs `adb reverse tcp:8765 tcp:8765` (the Android run script does this when a device is online). See [android-setup.md](android-setup.md).
+- Android **emulator** reaches the Mac via `10.0.2.2:8765` automatically (not `127.0.0.1`).
+- Android **device** needs `adb reverse tcp:8765 tcp:8765` (the Android run script does this when a device is online). See [android-setup.md](android-setup.md).
 
 Flags: `./scripts/run-ios-demo.sh --open` / `./scripts/run-mac-app.sh --open` open Xcode only; `./scripts/run-android-demo.sh --assemble-only` builds without install.
 
