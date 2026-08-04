@@ -2,15 +2,77 @@
 
 Debug-only **designer feedback** capture for **iOS** and **Android**: mark up a screen, **Send** to a native **macOS** Inbox, then trigger Cursor/Claude agents (CLI or MCP).
 
-## Integrate into your app
+## Quick start
 
-**[docs/integration.md](docs/integration.md)** — Quick start + full iOS (SPM) / Android (Gradle) setup.
+### 0. Mac receiver
 
 ```bash
-./scripts/run-mac-app.sh   # Mac Inbox receiver first
+./scripts/run-mac-app.sh
 ```
 
-Then add `RedlineServer` (iOS) or `:redline-android` (Android Debug), call `Redline.install`, wrap the root UI, tag regions, **Send**.
+Confirm listening on `127.0.0.1:8765`.
+
+### 1a. iOS (Simulator)
+
+1. Xcode → **Package Dependencies** → **Add Local…** → select this `redline` folder (`Package.swift`).
+2. Add product **`RedlineServer`** to the app target.
+3. Wrap the root view:
+
+```swift
+import RedlineServer
+
+ContentView()
+    .designerOverlay()
+```
+
+4. Optional region tags:
+
+```swift
+HeaderView()
+    .redlineRegion("Header")
+```
+
+5. Run on **Simulator** → two-finger long-press → **Whole screen** (or a region) → draw / comment → **Send**.
+
+### 1b. Android (emulator)
+
+1. In your app’s `settings.gradle.kts`:
+
+```kotlin
+include(":redline-android")
+project(":redline-android").projectDir =
+    file("/ABSOLUTE/PATH/TO/redline/android/redline-android")
+```
+
+2. App module:
+
+```kotlin
+dependencies {
+    debugImplementation(project(":redline-android"))
+}
+```
+
+3. Manifest: `INTERNET` + cleartext for `127.0.0.1` / `localhost` / `10.0.2.2`  
+   (copy [`network_security_config.xml`](android/AndroidDemo/src/main/res/xml/network_security_config.xml)).
+
+4. Root Compose:
+
+```kotlin
+DesignerOverlay {
+    HomeScreen()
+}
+```
+
+5. Optional: `modifier.redlineRegion("Header")`
+
+6. Run on an **emulator** → two-finger long-press → markup → **Send**  
+   (defaults to `http://10.0.2.2:8765/feedback` — no `adb reverse`).
+
+### 2. Confirm
+
+Redline.app Inbox shows the item; **Composite** includes baked markup strokes.
+
+Full options (API token, pins, physical devices): [docs/integration.md](docs/integration.md) · agents: [docs/agent-wiring.md](docs/agent-wiring.md) · devices: [docs/device-setup.md](docs/device-setup.md).
 
 ## Components
 
@@ -49,11 +111,10 @@ swift test
 
 ## End-to-end
 
-1. Mac: `./scripts/run-mac-app.sh` (listens on `127.0.0.1:8765`)
-2. Host: integrate your app ([docs/integration.md](docs/integration.md)) **or** run `./scripts/run-ios-demo.sh` / `./scripts/run-android-demo.sh`
-3. Designer: mark up → **Send** → Mac **Inbox** (composite PNG includes baked strokes)
-4. Settings → Cursor Agent CLI / Claude Code / desktop MCP. See [docs/agent-wiring.md](docs/agent-wiring.md)
-5. Devices: [docs/device-setup.md](docs/device-setup.md) · Android demo: [docs/android-setup.md](docs/android-setup.md)
+1. Mac: `./scripts/run-mac-app.sh`
+2. Host: Quick start above **or** `./scripts/run-ios-demo.sh` / `./scripts/run-android-demo.sh`
+3. Designer: mark up → **Send** → Mac **Inbox**
+4. Settings → Cursor / Claude — [docs/agent-wiring.md](docs/agent-wiring.md)
 
 ## Gates
 

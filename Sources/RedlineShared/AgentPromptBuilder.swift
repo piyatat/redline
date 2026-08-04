@@ -7,7 +7,7 @@ public struct AgentPromptBuilder {
         var lines: [String] = [
             "# Redline feedback",
             "",
-            "You are updating a screen spec based on designer feedback.",
+            "You are applying designer feedback from a marked-up screenshot.",
             "",
             "- **Screen:** \(payload.screen)",
             "- **Region:** \(payload.region)",
@@ -17,7 +17,7 @@ public struct AgentPromptBuilder {
             lines.append("- **State:** \(state)")
         }
         if let spec = payload.spec {
-            lines.append("- **Spec file:** \(spec)")
+            lines.append("- **Spec / file hint:** \(spec)")
         }
 
         lines.append("")
@@ -29,7 +29,7 @@ public struct AgentPromptBuilder {
         lines.append("")
 
         if !payload.pins.isEmpty {
-            lines.append("## Legal edit surface (Block 2 pins)")
+            lines.append("## Pins (optional edit hints)")
             for pin in payload.pins {
                 lines.append("- **\(pin.component):** `\(pin.pin)`")
             }
@@ -59,15 +59,15 @@ public struct AgentPromptBuilder {
             lines.append("- **Screenshot:** `\(pngURL.path)`")
             lines.append("- **Raw JSON:** `\(jsonURL.path)`")
             lines.append("")
-            lines.append("Open the screenshot (markup strokes are baked into the PNG) and apply the designer comment to the spec.")
+            lines.append("Open the screenshot (markup strokes are baked into the PNG) and apply the designer comment.")
             lines.append("Use the runtime context (VC stack / call stack / app info) to locate the right screen and files.")
             lines.append("")
         }
 
         lines.append("## Rules")
-        lines.append("1. Edit only the screen spec or Block-2 pins — never patch generated projection code directly.")
-        lines.append("2. Prefer applying a clear, minimal change that matches the comment and markup.")
-        lines.append("3. If the spec file is missing, create or locate the closest screen markdown and update it.")
+        lines.append("1. Prefer a clear, minimal UI or code change that matches the comment and markup.")
+        lines.append("2. If pins are listed above, treat them as optional hints — not hard requirements.")
+        lines.append("3. If a `spec` / file hint is present, prefer editing that path; otherwise find the matching screen in this repo.")
         lines.append("")
 
         return lines.joined(separator: "\n")

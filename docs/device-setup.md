@@ -32,7 +32,7 @@ The Mac receiver listens on **`127.0.0.1:8765` only**. A phone cannot reach that
 REDLINE_FEEDBACK_URL=http://127.0.0.1:8765/feedback
 ```
 
-3. With a reverse tunnel (or any shared Mac), set an **API token** in Redline Settings and the same token on the device (`REDLINE_API_TOKEN` / `Redline.install(…, apiToken:)` on Android).
+3. With a reverse tunnel (or any shared Mac), set an **API token** in Redline Settings and the same token on the device (`REDLINE_API_TOKEN` / `DesignerOverlay(…, apiToken =)` on Android).
 
 ```
 REDLINE_API_TOKEN=your-token
@@ -40,7 +40,7 @@ REDLINE_API_TOKEN=your-token
 
 ## Optional — iOS hierarchy TCP
 
-Debug iOS hosts (`Redline.install`) also bind a **hierarchy TCP** port for CLI `inspect` / MCP `redline_get_tree`. This is separate from feedback. **Redline.app does not show a hierarchy UI** today.
+Debug iOS hosts (`.designerOverlay`) also bind a **hierarchy TCP** port for CLI `inspect` / MCP `redline_get_tree`. This is separate from feedback. **Redline.app does not show a hierarchy UI** today.
 
 | Environment | Ports |
 |-------------|-------|
@@ -49,7 +49,7 @@ Debug iOS hosts (`Redline.install`) also bind a **hierarchy TCP** port for CLI `
 
 ### Physical device — hierarchy
 
-1. Run a Debug host with `Redline.install()` (optionally `inspectPort: 47175`).
+1. Run a Debug host with `.designerOverlay()` (optionally `inspectPort: 47175`).
 2. Forward **Mac → device**:
 
 ```bash
@@ -65,7 +65,8 @@ swift run redline inspect ping --port 47175
 Optional host override:
 
 ```swift
-Redline.install(inspectPort: 47175)
+RootView()
+    .designerOverlay(inspectPort: 47175)
 ```
 
 Android does **not** ship hierarchy TCP.

@@ -27,7 +27,7 @@ Modules:
 | **Android emulator** | `http://10.0.2.2:8765/feedback` | Emulator alias for the **Mac** loopback (same idea as iOS Simulator → `127.0.0.1`) |
 | **Physical device** | `http://127.0.0.1:8765/feedback` | Needs `adb reverse tcp:8765 tcp:8765` |
 
-Override anytime with `Redline.install(…, feedbackBaseUrl = "…")` or `REDLINE_FEEDBACK_URL`.
+Override anytime with `DesignerOverlay(…, feedbackBaseUrl = "…")` / `Redline.install(…)` or `REDLINE_FEEDBACK_URL`.
 
 ## Run the demo
 
@@ -60,37 +60,17 @@ Without the right host (`10.0.2.2` on emulator, or `adb reverse` on device), POS
 
 ## Host app integration
 
-See **[integration.md](integration.md)** for the full host-app guide (Gradle include, cleartext, `Redline.install`, `DesignerOverlay`, regions, tokens).
+See **[integration.md](integration.md)** (and the [README quick start](../README.md#quick-start)).
 
 Short version for this demo:
 
 ```kotlin
-// Application.onCreate() — Debug builds only
-Redline.install(
-    application = this,
-    screen = "home",
-    spec = "screens/home.screen.md",
-    context = MyDesignerContext, // optional pins
-    // feedbackBaseUrl = "http://127.0.0.1:8765/feedback", // optional override
-    // apiToken = "same-as-Mac-Settings", // required when Mac API token is set
-)
-```
-
-Root Compose:
-
-```kotlin
-DesignerOverlay(screen = "home", spec = "…", context = MyDesignerContext) {
+DesignerOverlay(context = MyDesignerContext) {
     HomeScreen()
 }
-```
 
-Tag regions:
-
-```kotlin
 modifier.redlineRegion("Header")
 ```
-
-Gradle (settings include the library project, or publish locally later):
 
 ```kotlin
 dependencies {
@@ -98,14 +78,7 @@ dependencies {
 }
 ```
 
-Optional process env (rarely set on stock Android — prefer `install(feedbackBaseUrl=…, apiToken=…)` or instrumentation):
-
-```
-REDLINE_FEEDBACK_URL=http://127.0.0.1:8765/feedback
-REDLINE_API_TOKEN=your-token
-```
-
-Host apps must declare `INTERNET` and allow cleartext to `127.0.0.1` **and** `10.0.2.2` (see demo `network_security_config.xml`). Use `debugImplementation` for the library in production hosts.
+Host apps must declare `INTERNET` and allow cleartext to `127.0.0.1` **and** `10.0.2.2`. Use `debugImplementation` for the library in production hosts.
 
 ## What this ships
 

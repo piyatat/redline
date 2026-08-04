@@ -10,7 +10,6 @@ BODY='{
   "state": "default",
   "platform": "ios",
   "mode": "light",
-  "spec": "screens/demo-home.screen.md",
   "capturedTs": "2026-07-06T12:00:00Z",
   "comment": "Make the button full width",
   "pins": [{ "component": "Button", "pin": "fillWidth=true" }],

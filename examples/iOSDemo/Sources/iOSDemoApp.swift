@@ -3,24 +3,10 @@ import SwiftUI
 
 @main
 struct iOSDemoApp: App {
-    init() {
-        #if DEBUG
-        Redline.install(
-            screen: "demo-home",
-            spec: "screens/demo-home.screen.md",
-            context: DemoDesignerContext()
-        )
-        #endif
-    }
-
     var body: some Scene {
         WindowGroup {
             DemoHomeView()
-                .designerOverlay(
-                    screen: "demo-home",
-                    spec: "screens/demo-home.screen.md",
-                    context: DemoDesignerContext()
-                )
+                .designerOverlay(context: DemoDesignerContext())
         }
     }
 }

@@ -9,16 +9,27 @@ extension View {
         modifier(DesignerRegionTagModifier(name: name, state: state))
     }
 
+    /// Enables designer capture on this view tree (Debug). Calls `Redline.install` on appear.
     public func designerOverlay(
-        screen: String,
+        screen: String = "app",
         spec: String? = nil,
         state: String? = nil,
-        context: DesignerContext = EmptyDesignerContext()
+        context: DesignerContext = EmptyDesignerContext(),
+        feedbackBaseURL: URL? = nil,
+        inspectPort: UInt16 = UInt16(RedlinePorts.simulatorInspectStart)
     ) -> some View {
-        modifier(DesignerRootModifier(screen: screen, spec: spec, context: context, state: state))
+        modifier(
+            DesignerRootModifier(
+                screen: screen,
+                spec: spec,
+                context: context,
+                state: state,
+                feedbackBaseURL: feedbackBaseURL,
+                inspectPort: inspectPort
+            )
+        )
     }
 }
-
 private struct DesignerRegionTagModifier: ViewModifier {
     let name: String
     let state: String?

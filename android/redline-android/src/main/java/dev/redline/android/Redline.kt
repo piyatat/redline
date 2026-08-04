@@ -47,6 +47,11 @@ object Redline {
     private val activityRef = AtomicReference<Activity?>(null)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    /**
+     * Debug-only install (registers gesture callbacks + transport).
+     * Prefer [DesignerOverlay] — it calls this automatically. Use [install] only when you
+     * need to configure URL/token before any overlay is composed.
+     */
     fun install(
         application: Application,
         screen: String = "app",

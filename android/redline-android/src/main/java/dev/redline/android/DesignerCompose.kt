@@ -1,5 +1,6 @@
 package dev.redline.android
 
+import android.app.Application
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -31,12 +32,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CropSquare
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.NorthEast
-import androidx.compose.material.icons.filled.CropSquare
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -58,9 +59,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -107,17 +109,29 @@ fun Modifier.redlineRegion(name: String): Modifier = composed {
 
 /**
  * Host root overlay: designer banner + fullscreen markup sheet.
+ * Calls [Redline.install] on first composition — no separate Application hook required.
  */
 @Composable
 fun DesignerOverlay(
-    screen: String,
+    screen: String = "app",
     spec: String? = null,
     state: String? = null,
     context: DesignerContext = EmptyDesignerContext,
+    feedbackBaseUrl: String? = null,
+    apiToken: String? = null,
     content: @Composable () -> Unit,
 ) {
-    DisposableEffect(screen, spec, state, context) {
-        DesignerModeController.activate(screen, spec, state, context)
+    val app = LocalContext.current.applicationContext as Application
+    DisposableEffect(screen, spec, state, context, feedbackBaseUrl, apiToken, app) {
+        Redline.install(
+            application = app,
+            screen = screen,
+            spec = spec,
+            state = state,
+            context = context,
+            feedbackBaseUrl = feedbackBaseUrl,
+            apiToken = apiToken,
+        )
         onDispose { }
     }
 

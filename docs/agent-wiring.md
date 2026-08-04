@@ -110,7 +110,7 @@ Redline.runtimeNotes = "Checkout — empty cart"
 // or:
 Redline.setRuntimeUserInfo(["userId": "…"])
 Redline.setRuntimeNotes("…")
-Redline.updateScreen(screen: "checkout", spec: "screens/checkout.screen.md", state: "empty")
+Redline.updateScreen(screen: "checkout", state: "empty") // optional Inbox labels
 ```
 
 Shown in Inbox → **App / runtime** and included in `prompt.md`.
@@ -178,7 +178,9 @@ export REDLINE_API_TOKEN=your-token
 ```
 
 - iOS: set in the scheme environment
-- Android: `Redline.install(…, apiToken = "…")` (preferred) or process/instrumentation `REDLINE_API_TOKEN`
+- Android: `DesignerOverlay(…, apiToken = "…")` (preferred) or process/instrumentation `REDLINE_API_TOKEN`
+- iOS: scheme env `REDLINE_API_TOKEN` (overlay calls install on appear)
+
 - CLI: picks up `REDLINE_API_TOKEN` automatically (`swift run redline health`)
 - Cursor MCP: set the env var in Cursor’s MCP server config UI — **Install into project does not write tokens** into `.cursor/mcp.json` (avoids committing secrets)
 

@@ -359,6 +359,8 @@ public struct DesignerRootModifier: ViewModifier {
     let spec: String?
     let context: DesignerContext
     let state: String?
+    let feedbackBaseURL: URL?
+    let inspectPort: UInt16
     @ObservedObject private var controller = DesignerModeController.shared
 
     public func body(content: Content) -> some View {
@@ -385,11 +387,13 @@ public struct DesignerRootModifier: ViewModifier {
                 }
             }
             .onAppear {
-                DesignerModeController.shared.activate(
+                Redline.install(
                     screen: screen,
                     spec: spec,
+                    state: state,
                     context: context,
-                    state: state
+                    feedbackBaseURL: feedbackBaseURL,
+                    inspectPort: inspectPort
                 )
             }
     }

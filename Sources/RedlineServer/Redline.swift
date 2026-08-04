@@ -20,8 +20,10 @@ public enum Redline {
         runtimeNotes = notes
     }
 
-    /// Install Redline in the host app (Debug only — call behind `#if DEBUG`).
-    /// Starts designer capture (feedback POST) and, on iOS, the optional hierarchy TCP service.
+    /// Install Redline in the host app (Debug only).
+    /// Prefer `.designerOverlay(…)` — it calls this on appear. Use `install` only when you
+    /// need feedback URL / inspect port before any overlay is mounted.
+    /// `screen` / `spec` are optional Inbox/agent labels (default screen `"app"`).
     public static func install(
         screen: String = "app",
         spec: String? = nil,
@@ -42,8 +44,10 @@ public enum Redline {
                 state: state
             )
         }
-        InspectorTCPService.shared.start(port: inspectPort)
-        isInstalled = true
+        if !isInstalled {
+            InspectorTCPService.shared.start(port: inspectPort)
+            isInstalled = true
+        }
         #else
         _ = screen
         _ = spec

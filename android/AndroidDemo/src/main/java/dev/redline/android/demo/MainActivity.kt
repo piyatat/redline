@@ -38,8 +38,6 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     DesignerOverlay(
-                        screen = "demo-home",
-                        spec = "screens/demo-home.screen.md",
                         context = DemoDesignerContext,
                     ) {
                         DemoHomeScreen()
