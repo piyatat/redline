@@ -6,7 +6,7 @@ Add Redline to an **iOS** or **Android** host so designers can mark up screens a
 
 | | iOS | Android |
 |--|-----|---------|
-| Library | SPM `RedlineServer` | Gradle `:redline-android` |
+| Library | SPM `RedlineServer` (GitHub) | JitPack `redline-android` (or local project) |
 | UI | SwiftUI | Jetpack Compose |
 | Entry point | `.designerOverlay()` | `DesignerOverlay { }` |
 | Default URL | `http://127.0.0.1:8765/feedback` | Emulator `10.0.2.2` · device `127.0.0.1` + `adb reverse` |
@@ -20,13 +20,14 @@ You only need the overlay. It installs transport, gestures, and designer state o
 
 ## Full integration — iOS
 
-### Add the package
+### Add the package (Git)
 
 1. Xcode → **File → Add Package Dependencies…**
-2. **Add Local…** → choose the `redline` repo root (`Package.swift`).
-3. Add **`RedlineServer`** to your app target.
+2. URL: `https://github.com/piyatat/redline.git`
+3. Dependency Rule: **Branch** `main`, or Exact Revision / Version tag when pinning
+4. Add product **`RedlineServer`** to the app target
 
-Or Git: `https://github.com/piyatat/redline.git` → product `RedlineServer`.
+Local checkout (contributing to Redline): **Add Local…** → this repo’s `Package.swift`.
 
 ### Wrap the root
 
@@ -99,7 +100,33 @@ Set scheme env `REDLINE_API_TOKEN` (and optionally `REDLINE_FEEDBACK_URL`).
 
 Requires **Jetpack Compose**.
 
-### Include the library
+### Add the library (Git / JitPack)
+
+Host apps do **not** need a Redline clone:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven(url = "https://jitpack.io")
+    }
+}
+```
+
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    // Prefer a commit SHA or release tag over main-SNAPSHOT for reproducible builds
+    debugImplementation("com.github.piyatat.redline:redline-android:main-SNAPSHOT")
+}
+```
+
+Builds: [jitpack.io/#piyatat/redline](https://jitpack.io/#piyatat/redline).
+
+### Local path (contributing to Redline)
 
 ```kotlin
 // settings.gradle.kts
@@ -109,7 +136,6 @@ project(":redline-android").projectDir =
 ```
 
 ```kotlin
-// app/build.gradle.kts
 dependencies {
     debugImplementation(project(":redline-android"))
 }

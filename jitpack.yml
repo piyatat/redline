@@ -1,0 +1,7 @@
+# JitPack builds the Android library from android/ (SPM lives at repo root).
+jdk:
+  - openjdk17
+env:
+  ANDROID_HOME: "/sdk"
+install:
+  - cd android && ./gradlew :redline-android:publishToMavenLocal -Pgroup=com.github.piyatat.redline -Pversion=$VERSION

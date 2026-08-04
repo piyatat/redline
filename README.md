@@ -14,9 +14,11 @@ Confirm listening on `127.0.0.1:8765`.
 
 ### 1a. iOS (Simulator)
 
-1. Xcode → **Package Dependencies** → **Add Local…** → select this `redline` folder (`Package.swift`).
-2. Add product **`RedlineServer`** to the app target.
-3. Wrap the root view:
+1. Xcode → **File → Add Package Dependencies…**
+2. URL: `https://github.com/piyatat/redline.git`
+3. Dependency Rule: **Branch** `main` (or Exact Revision / a release tag when you pin)
+4. Add product **`RedlineServer`** to the app target.
+5. Wrap the root view:
 
 ```swift
 import RedlineServer
@@ -25,35 +27,41 @@ ContentView()
     .designerOverlay()
 ```
 
-4. Optional region tags:
+6. Optional region tags:
 
 ```swift
 HeaderView()
     .redlineRegion("Header")
 ```
 
-5. Run on **Simulator** → two-finger long-press → **Whole screen** (or a region) → draw / comment → **Send**.
+7. Run on **Simulator** → two-finger long-press → **Whole screen** (or a region) → draw / comment → **Send**.
 
 ### 1b. Android (emulator)
 
-1. In your app’s `settings.gradle.kts`:
+1. In the **app repo** `settings.gradle.kts`, add JitPack:
 
 ```kotlin
-include(":redline-android")
-project(":redline-android").projectDir =
-    file("/ABSOLUTE/PATH/TO/redline/android/redline-android")
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven(url = "https://jitpack.io")
+    }
+}
 ```
 
 2. App module:
 
 ```kotlin
 dependencies {
-    debugImplementation(project(":redline-android"))
+    // Pin a commit SHA, or a tag once you cut releases (e.g. v0.1.0)
+    debugImplementation("com.github.piyatat.redline:redline-android:main-SNAPSHOT")
 }
 ```
 
 3. Manifest: `INTERNET` + cleartext for `127.0.0.1` / `localhost` / `10.0.2.2`  
-   (copy [`network_security_config.xml`](android/AndroidDemo/src/main/res/xml/network_security_config.xml)).
+   (copy from [network_security_config.xml](https://github.com/piyatat/redline/blob/main/android/AndroidDemo/src/main/res/xml/network_security_config.xml)).
 
 4. Root Compose:
 
@@ -67,6 +75,8 @@ DesignerOverlay {
 
 6. Run on an **emulator** → two-finger long-press → markup → **Send**  
    (defaults to `http://10.0.2.2:8765/feedback` — no `adb reverse`).
+
+> Developing Redline itself? Prefer a local `project(":redline-android")` include — see [docs/integration.md](docs/integration.md).
 
 ### 2. Confirm
 

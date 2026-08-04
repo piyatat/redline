@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    `maven-publish`
 }
 
 android {
@@ -26,6 +27,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
@@ -42,4 +49,17 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.okhttp)
     implementation(libs.kotlinx.coroutines.android)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+                groupId = (findProperty("group") as String?) ?: "com.github.piyatat.redline"
+                artifactId = "redline-android"
+                version = (findProperty("version") as String?) ?: "0.1.0-LOCAL"
+            }
+        }
+    }
 }

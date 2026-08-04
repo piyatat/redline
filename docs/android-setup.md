@@ -74,9 +74,13 @@ modifier.redlineRegion("Header")
 
 ```kotlin
 dependencies {
-    debugImplementation(project(":redline-android"))
+    debugImplementation("com.github.piyatat.redline:redline-android:main-SNAPSHOT")
+    // or local while hacking on Redline:
+    // debugImplementation(project(":redline-android"))
 }
 ```
+
+Add `maven(url = "https://jitpack.io")` under `dependencyResolutionManagement.repositories` in the host `settings.gradle.kts`.
 
 Host apps must declare `INTERNET` and allow cleartext to `127.0.0.1` **and** `10.0.2.2`. Use `debugImplementation` for the library in production hosts.
 
@@ -88,5 +92,5 @@ Host apps must declare `INTERNET` and allow cleartext to `127.0.0.1` **and** `10
 ## Not in this slice
 
 - Hierarchy TCP (iOS-only; not shipped on Android)
-- Maven Central publish
+- Maven Central publish (JitPack is the Git-ref path for now)
 - View-system (non-Compose) hosts
