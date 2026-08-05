@@ -87,7 +87,7 @@ Host apps must declare `INTERNET` and allow cleartext to `127.0.0.1` **and** `10
 ## What this ships
 
 - Designer mode toggle (two-finger long-press or button), region tags, markup (pen / arrow / rect), top frosted toolbar with show/hide → **Send** → Feedback v1
-- **Composite PNG** with markup strokes baked in (same image Mac Inbox and agents use), plus stroke JSON, optional pins, and a small runtime block
+- **Marked-up screenshot** (`composite.png`) with markup strokes baked in (same image Mac Inbox and agents use), plus stroke JSON, optional pins, and a small runtime block
 
 ## Not in this slice
 

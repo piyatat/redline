@@ -192,7 +192,7 @@ struct InboxPanelView: View {
             if inbox.items.isEmpty {
                 emptyState(
                     title: "No feedback yet",
-                    subtitle: "Save a redline on iOS or Android to land it here."
+                    subtitle: "Send feedback from iOS or Android to land it here."
                 )
             } else if filteredItems.isEmpty {
                 emptyState(
@@ -488,7 +488,10 @@ private struct InboxDetailView: View {
                 Spacer()
             }
             HStack(spacing: 12) {
-                Label(item.payload.platform, systemImage: "iphone")
+                Label(
+                    item.payload.platform,
+                    systemImage: item.payload.platform.lowercased() == "android" ? "smartphone" : "iphone"
+                )
                 if let state = item.payload.state {
                     Text(state)
                 }
@@ -561,10 +564,10 @@ private struct InboxDetailView: View {
         if let data = Data(base64Encoded: item.payload.compositePngBase64),
            let nsImage = NSImage(data: data) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Composite")
+                Text("Marked-up screenshot")
                     .appFont(.caption, weight: .semibold)
                     .foregroundStyle(.secondary)
-                Text("Device screenshot with markup baked in (same PNG agents receive).")
+                Text("Device capture with markup baked in (composite.png for agents).")
                     .appFont(.caption2)
                     .foregroundStyle(.tertiary)
                 Image(nsImage: nsImage)
@@ -577,6 +580,10 @@ private struct InboxDetailView: View {
                             .stroke(Color.primary.opacity(0.08))
                     )
             }
+        } else if !item.payload.compositePngBase64.isEmpty {
+            Text("Marked-up screenshot unavailable — open the bundle to inspect composite.png.")
+                .appFont(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -617,10 +624,13 @@ private struct InboxDetailView: View {
                         .joined(separator: " ")
                 )
                 if let sim = runtime.isSimulator {
-                    runtimeLine("Simulator", sim ? "yes" : "no")
+                    let label = item.payload.platform.lowercased() == "android" ? "Emulator" : "Simulator"
+                    runtimeLine(label, sim ? "yes" : "no")
                 }
                 runtimeLine("Screen", runtime.screenBounds)
-                runtimeLine("Top VC", runtime.topViewController)
+                if let top = runtime.topViewController {
+                    runtimeLine("Top VC", top)
+                }
 
                 if let stack = runtime.viewControllerStack, !stack.isEmpty {
                     Text("VC stack")

@@ -1,5 +1,6 @@
 package dev.redline.android
 
+import android.app.Activity
 import android.app.Application
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -122,7 +123,8 @@ fun DesignerOverlay(
     content: @Composable () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as Application
-    DisposableEffect(screen, spec, state, context, feedbackBaseUrl, apiToken, app) {
+    val activity = LocalContext.current as? Activity
+    DisposableEffect(screen, spec, state, context, feedbackBaseUrl, apiToken, app, activity) {
         Redline.install(
             application = app,
             screen = screen,
@@ -132,6 +134,7 @@ fun DesignerOverlay(
             feedbackBaseUrl = feedbackBaseUrl,
             apiToken = apiToken,
         )
+        activity?.let { Redline.ensureGesturesAttached(it) }
         onDispose { }
     }
 
@@ -168,7 +171,7 @@ fun DesignerOverlay(
                     CircularProgressIndicator(color = RegionOrange)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Saving…",
+                        text = "Sending…",
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -180,25 +183,40 @@ fun DesignerOverlay(
 
 @Composable
 private fun DesignerBanner(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(RegionOrange)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    val tip = if (RegionRegistry.regionCount > 0) {
+        "Tap an orange region, or Whole screen"
+    } else {
+        "No regions tagged · use Whole screen"
+    }
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "Designer mode",
+            text = tip,
             color = Color.White,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(RegionOrange)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
         )
-        TextButton(onClick = { DesignerModeController.beginScreenMarkup() }) {
-            Text(text = "Whole screen", color = Color.White, fontSize = 13.sp)
-        }
-        TextButton(onClick = { DesignerModeController.toggleDesignerMode() }) {
-            Text(text = "Exit", color = Color.White, fontSize = 13.sp)
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(RegionOrange)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TextButton(onClick = { DesignerModeController.beginScreenMarkup() }) {
+                Text(text = "Whole screen", color = Color.White, fontSize = 13.sp)
+            }
+            TextButton(onClick = { DesignerModeController.toggleDesignerMode() }) {
+                Text(text = "Exit", color = Color.White, fontSize = 13.sp)
+            }
         }
     }
 }

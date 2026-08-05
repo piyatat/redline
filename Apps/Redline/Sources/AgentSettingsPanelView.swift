@@ -183,7 +183,7 @@ struct AgentSettingsPanelView: View {
     @ViewBuilder
     private var autoAgentSetupContent: some View {
         labeledHelp(
-            "Each Save starts the CLI below. Do not also run `/redline-wait` on the same feedback — pick one path."
+            "Each Send starts the CLI below. Do not also run `/redline-wait` on the same feedback — pick one path."
         )
         consentToggle
         backendPickerAndDetails(includeProjectFolder: true)

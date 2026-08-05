@@ -22,7 +22,7 @@ description: >-
    - Do **not** treat an already-present inbox item as new; the tool waits for a new id.
    - On success the Mac Inbox item is marked **Running** (`agent_running`).
 2. When it returns, note `id`, `screen`, `region`, `comment`, `spec`, `runtime`, and `bundleDirectory`.
-   - Composite PNG is omitted from MCP JSON (`compositeOmitted: true`) — read the image from disk.
+   - Marked-up screenshot (`composite.png`) is omitted from MCP JSON (`compositeOmitted: true`) — read the image from disk.
    - `composite.png` already includes baked markup strokes (display as-is).
 3. Optionally call **`redline_inbox_show`** with that `id` if you need details again.
 4. Read staged feedback assets (preferred):

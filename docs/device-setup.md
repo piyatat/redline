@@ -32,7 +32,7 @@ The Mac receiver listens on **`127.0.0.1:8765` only**. A phone cannot reach that
 REDLINE_FEEDBACK_URL=http://127.0.0.1:8765/feedback
 ```
 
-3. With a reverse tunnel (or any shared Mac), set an **API token** in Redline Settings and the same token on the device (`REDLINE_API_TOKEN` / `DesignerOverlay(…, apiToken =)` on Android).
+3. With a reverse tunnel (or any shared Mac), set an **API token** in Redline Settings and the same token on the device (`REDLINE_API_TOKEN`, iOS `designerOverlay(apiToken:)`, or Android `DesignerOverlay(…, apiToken =)`).
 
 ```
 REDLINE_API_TOKEN=your-token

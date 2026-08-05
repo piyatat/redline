@@ -360,6 +360,7 @@ public struct DesignerRootModifier: ViewModifier {
     let context: DesignerContext
     let state: String?
     let feedbackBaseURL: URL?
+    let apiToken: String?
     let inspectPort: UInt16
     @ObservedObject private var controller = DesignerModeController.shared
 
@@ -378,7 +379,7 @@ public struct DesignerRootModifier: ViewModifier {
                         VStack(spacing: 12) {
                             ProgressView()
                                 .tint(.white)
-                            Text("Saving…")
+                            Text("Sending…")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.white)
                         }
@@ -393,6 +394,7 @@ public struct DesignerRootModifier: ViewModifier {
                     state: state,
                     context: context,
                     feedbackBaseURL: feedbackBaseURL,
+                    apiToken: apiToken,
                     inspectPort: inspectPort
                 )
             }
@@ -421,14 +423,25 @@ private struct DesignerModeBanner: View {
                             .background(Color.orange)
                             .clipShape(Capsule())
 
-                        Button {
-                            controller.beginScreenMarkup()
-                        } label: {
-                            Label("Whole screen", systemImage: "rectangle.dashed")
-                                .font(.footnote.weight(.semibold))
+                        HStack(spacing: 8) {
+                            Button {
+                                controller.beginScreenMarkup()
+                            } label: {
+                                Label("Whole screen", systemImage: "rectangle.dashed")
+                                    .font(.footnote.weight(.semibold))
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.orange)
+
+                            Button {
+                                controller.toggleDesignerMode()
+                            } label: {
+                                Text("Exit")
+                                    .font(.footnote.weight(.semibold))
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.orange)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
                     }
                     .padding(.top, 8)
                     .allowsHitTesting(true)

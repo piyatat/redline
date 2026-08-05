@@ -35,6 +35,18 @@ final class FeedbackPayloadTests: XCTestCase {
         XCTAssertThrowsError(try payload.validateSchema())
     }
 
+    func testValidateForIngestRequiresComposite() {
+        let payload = FeedbackPayload(
+            screen: "home",
+            region: "Header",
+            platform: "ios",
+            capturedTs: "2026-06-18T03:27:59Z",
+            comment: "fix",
+            compositePngBase64: "   "
+        )
+        XCTAssertThrowsError(try payload.validateForIngest())
+    }
+
     func testPromptBuilderIncludesPins() {
         let payload = FeedbackPayload(
             screen: "home",

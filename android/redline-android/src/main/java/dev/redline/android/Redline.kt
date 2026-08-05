@@ -71,6 +71,8 @@ object Redline {
                 FeedbackTransport.shared.configure(it)
             }
             apiToken?.let { FeedbackTransport.shared.configureApiToken(it) }
+            // Re-attach if install raced after onResume (callback already fired).
+            activityRef.get()?.let { ensureGesturesAttached(it) }
             return
         }
         applicationRef.set(application)
@@ -86,11 +88,24 @@ object Redline {
         )
         application.registerActivityLifecycleCallbacks(activityCallbacks)
         installed = true
+        // registerActivityLifecycleCallbacks does not replay onResume — attach if already resumed.
+        activityRef.get()?.let { ensureGesturesAttached(it) }
         Log.i(
             TAG,
             "installed → ${FeedbackTransport.shared.baseUrl}" +
                 if (RedlineDefines.isEmulator()) " (emulator→host)" else " (device; use adb reverse)",
-        )    }
+        )
+    }
+
+    /** Attach two-finger toggle when [install] ran after the Activity was already resumed. */
+    fun ensureGesturesAttached(activity: Activity) {
+        activityRef.set(activity)
+        activity.window?.decorView?.post {
+            if (activityRef.get() === activity) {
+                DesignerGestureInstaller.attachTo(activity)
+            }
+        }
+    }
 
     fun updateScreen(screen: String, spec: String? = null, state: String? = null) {
         if (!installed) return
@@ -117,13 +132,7 @@ object Redline {
 
     private val activityCallbacks = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityResumed(activity: Activity) {
-            activityRef.set(activity)
-            // Post so we wrap after Activity / AndroidX finish setting Window.Callback.
-            activity.window?.decorView?.post {
-                if (activityRef.get() === activity) {
-                    DesignerGestureInstaller.attachTo(activity)
-                }
-            }
+            ensureGesturesAttached(activity)
         }
 
         override fun onActivityPaused(activity: Activity) {
@@ -219,6 +228,9 @@ object DesignerModeController {
         if (isSaving) return
         showMarkup = false
         activeRegion = null
+        markupComment = ""
+        strokes.clear()
+        toolsUsed.clear()
         saveError = null
     }
 
@@ -260,47 +272,56 @@ object DesignerModeController {
                 isCapturing = false
                 return@Runnable
             }
-            val composite = SnapshotRenderer.captureDecorViewPngBase64(strokeSnapshot)
-            isCapturing = false
-            if (composite.isNullOrBlank()) {
+            try {
+                val composite = SnapshotRenderer.captureDecorViewPngBase64(strokeSnapshot)
+                isCapturing = false
+                if (composite.isNullOrBlank()) {
+                    showMarkup = true
+                    isSaving = false
+                    saveError = "Could not capture screenshot"
+                    onDone?.invoke(false)
+                    return@Runnable
+                }
+
+                val payload = FeedbackPayload(
+                    screen = screenName,
+                    region = region,
+                    state = stateName,
+                    platform = "android",
+                    mode = currentUiMode(),
+                    spec = specPath,
+                    capturedTs = isoNow(),
+                    comment = comment,
+                    pins = pins,
+                    toolsUsed = tools,
+                    strokes = strokeSnapshot,
+                    compositePngBase64 = composite,
+                    runtime = RuntimeContextCapture.capture(),
+                )
+
+                Redline.postFeedbackAsync(payload) { result ->
+                    isSaving = false
+                    result.onSuccess {
+                        activeRegion = null
+                        markupComment = ""
+                        strokes.clear()
+                        toolsUsed.clear()
+                        saveError = null
+                        onDone?.invoke(true)
+                    }.onFailure { err ->
+                        showMarkup = true
+                        saveError = err.message ?: "Send failed"
+                        Log.e("Redline", "saveMarkup failed", err)
+                        onDone?.invoke(false)
+                    }
+                }
+            } catch (err: Exception) {
+                isCapturing = false
                 showMarkup = true
                 isSaving = false
-                saveError = "Could not capture screenshot"
+                saveError = err.message ?: "Could not capture screenshot"
+                Log.e("Redline", "saveMarkup capture failed", err)
                 onDone?.invoke(false)
-                return@Runnable
-            }
-
-            val payload = FeedbackPayload(
-                screen = screenName,
-                region = region,
-                state = stateName,
-                platform = "android",
-                mode = currentUiMode(),
-                spec = specPath,
-                capturedTs = isoNow(),
-                comment = comment,
-                pins = pins,
-                toolsUsed = tools,
-                strokes = strokeSnapshot,
-                compositePngBase64 = composite,
-                runtime = RuntimeContextCapture.capture(),
-            )
-
-            Redline.postFeedbackAsync(payload) { result ->
-                isSaving = false
-                result.onSuccess {
-                    activeRegion = null
-                    markupComment = ""
-                    strokes.clear()
-                    toolsUsed.clear()
-                    saveError = null
-                    onDone?.invoke(true)
-                }.onFailure { err ->
-                    showMarkup = true
-                    saveError = err.message ?: "Save failed"
-                    Log.e("Redline", "saveMarkup failed", err)
-                    onDone?.invoke(false)
-                }
             }
         }
 
@@ -308,16 +329,17 @@ object DesignerModeController {
         // Always schedule on the main Handler so Activity/decor teardown cannot drop isSaving forever.
         val decor = Redline.currentActivity()?.window?.decorView
         if (decor != null) {
-            val observer = decor.viewTreeObserver
-            observer.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+            val listener = object : android.view.ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
-                    if (observer.isAlive) {
-                        observer.removeOnPreDrawListener(this)
+                    val live = decor.viewTreeObserver
+                    if (live.isAlive) {
+                        live.removeOnPreDrawListener(this)
                     }
                     mainHandler.postDelayed(captureAndPost, 50L)
                     return true
                 }
-            })
+            }
+            decor.viewTreeObserver.addOnPreDrawListener(listener)
             decor.invalidate()
             // Safety net if pre-draw never fires (detached view).
             mainHandler.postDelayed(captureAndPost, 200L)
@@ -496,7 +518,7 @@ object RuntimeContextCapture {
             deviceModel = Build.MODEL,
             systemName = "Android",
             systemVersion = Build.VERSION.RELEASE,
-            isSimulator = isEmulator(),
+            isSimulator = RedlineDefines.isEmulator(),
             localeIdentifier = Locale.getDefault().toLanguageTag(),
             timeZoneIdentifier = TimeZone.getDefault().id,
             screenBounds = metrics?.let { "${it.widthPixels}x${it.heightPixels}" },
@@ -505,15 +527,5 @@ object RuntimeContextCapture {
             userInfo = Redline.runtimeUserInfo.takeIf { it.isNotEmpty() },
             notes = Redline.runtimeNotes,
         )
-    }
-
-    private fun isEmulator(): Boolean {
-        return (Build.FINGERPRINT.startsWith("generic")
-            || Build.FINGERPRINT.lowercase().contains("emulator")
-            || Build.MODEL.contains("Emulator")
-            || Build.MANUFACTURER.contains("Genymotion")
-            || Build.PRODUCT.contains("sdk")
-            || Build.HARDWARE.contains("goldfish")
-            || Build.HARDWARE.contains("ranchu"))
     }
 }

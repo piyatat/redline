@@ -22,7 +22,7 @@ private struct DemoHomeView: View {
                         .font(.largeTitle.bold())
                     Text(designer.isDesignerModeActive
                          ? "Tap a region or Whole screen to markup."
-                         : "Tap Enter designer, then pick a region or whole screen.")
+                         : "Two-finger long-press (or Enter designer), then pick a region.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

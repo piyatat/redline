@@ -121,11 +121,14 @@ public struct FeedbackPayload: Codable, Equatable, Sendable {
 
 public enum FeedbackPayloadError: Error, LocalizedError {
     case unsupportedSchema(Int)
+    case missingField(String)
 
     public var errorDescription: String? {
         switch self {
         case .unsupportedSchema(let version):
             return "Unsupported feedback schema version: \(version)"
+        case .missingField(let name):
+            return "Missing or empty required field: \(name)"
         }
     }
 }
@@ -134,6 +137,23 @@ extension FeedbackPayload {
     public func validateSchema() throws {
         guard schema == Self.currentSchema else {
             throw FeedbackPayloadError.unsupportedSchema(schema)
+        }
+    }
+
+    /// Stricter checks for HTTP ingest (matches Android client `validate()`).
+    public func validateForIngest() throws {
+        try validateSchema()
+        if screen.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw FeedbackPayloadError.missingField("screen")
+        }
+        if region.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw FeedbackPayloadError.missingField("region")
+        }
+        if comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw FeedbackPayloadError.missingField("comment")
+        }
+        if compositePngBase64.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw FeedbackPayloadError.missingField("compositePngBase64")
         }
     }
 

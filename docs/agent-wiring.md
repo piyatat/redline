@@ -29,7 +29,7 @@ flowchart LR
 
 2. Launch **Redline.app** → **Settings** tab:
    - Under **When feedback arrives**, choose **Agent CLI** (or **Off — manual** / **Notify only**)
-   - In the mode setup below: enable **Allow Redline to call external AI**, **Backend** = Cursor Agent CLI, **Project folder** = repo that owns your screen specs
+   - Enable **Allow Redline to call external AI**, **Backend** = Cursor Agent CLI, **Project folder** = the repo Cursor should edit
    - Set **API token** (required for Agent CLI auto-run; host apps must send the same bearer)
 
 3. **Send** a redline on device (or Inbox → **Send to AI**).
@@ -102,7 +102,9 @@ Agent output is stored on the inbox item and in `agent-hook.log` next to the bun
 
 ## Runtime context (host apps)
 
-On **Send**, Redline attaches an automatic `runtime` block (app/version, device/OS, VC stack, call stack). Host apps can add:
+On **Send**, Redline attaches an automatic `runtime` block (app/version, device/OS). On **iOS** this also includes VC stack and call stack. Host apps can add:
+
+**iOS**
 
 ```swift
 Redline.runtimeUserInfo = ["userId": "…", "env": "staging"]
@@ -111,6 +113,14 @@ Redline.runtimeNotes = "Checkout — empty cart"
 Redline.setRuntimeUserInfo(["userId": "…"])
 Redline.setRuntimeNotes("…")
 Redline.updateScreen(screen: "checkout", state: "empty") // optional Inbox labels
+```
+
+**Android**
+
+```kotlin
+Redline.setRuntimeUserInfo(mapOf("userId" to "…", "env" to "staging"))
+Redline.runtimeNotes = "Checkout — empty cart"
+Redline.updateScreen("checkout", state = "empty")
 ```
 
 Shown in Inbox → **App / runtime** and included in `prompt.md`.
@@ -177,10 +187,8 @@ If Settings → **API token** is set on the Mac app, **all** clients must send t
 export REDLINE_API_TOKEN=your-token
 ```
 
-- iOS: set in the scheme environment
+- iOS: `designerOverlay(apiToken:)` (preferred) or scheme env `REDLINE_API_TOKEN`
 - Android: `DesignerOverlay(…, apiToken = "…")` (preferred) or process/instrumentation `REDLINE_API_TOKEN`
-- iOS: scheme env `REDLINE_API_TOKEN` (overlay calls install on appear)
-
 - CLI: picks up `REDLINE_API_TOKEN` automatically (`swift run redline health`)
 - Cursor MCP: set the env var in Cursor’s MCP server config UI — **Install into project does not write tokens** into `.cursor/mcp.json` (avoids committing secrets)
 

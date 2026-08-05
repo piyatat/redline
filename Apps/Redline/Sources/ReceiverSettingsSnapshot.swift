@@ -10,7 +10,8 @@ final class ReceiverSettingsSnapshot: @unchecked Sendable {
     func update(from settings: AgentSettings) {
         lock.lock()
         defer { lock.unlock() }
-        apiToken = settings.apiToken
+        let trimmed = settings.apiToken?.trimmingCharacters(in: .whitespacesAndNewlines)
+        apiToken = (trimmed?.isEmpty == false) ? trimmed : nil
         maxBodyBytes = max(1, settings.maxFeedbackBodyBytes)
     }
 

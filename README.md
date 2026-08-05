@@ -66,8 +66,15 @@ dependencies {
 4. Root Compose:
 
 ```kotlin
-DesignerOverlay {
-    HomeScreen()
+import dev.redline.android.DesignerOverlay
+import dev.redline.android.redlineRegion
+
+setContent {
+    MaterialTheme {
+        DesignerOverlay {
+            HomeScreen()
+        }
+    }
 }
 ```
 
@@ -80,7 +87,7 @@ DesignerOverlay {
 
 ### 2. Confirm
 
-Redline.app Inbox shows the item; **Composite** includes baked markup strokes.
+Redline.app Inbox shows the item; **Marked-up screenshot** (`composite.png`) includes baked markup strokes.
 
 Full options (API token, pins, physical devices): [docs/integration.md](docs/integration.md) · agents: [docs/agent-wiring.md](docs/agent-wiring.md) · devices: [docs/device-setup.md](docs/device-setup.md).
 

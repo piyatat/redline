@@ -1,6 +1,25 @@
 import Combine
+import Foundation
 import SwiftUI
 import RedlineShared
+
+/// Thread-safe inbox JSON snapshot for the HTTP receiver (avoids `main.sync` from the Network queue).
+final class InboxJSONCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data: Data = Data("[]".utf8)
+
+    func update(_ newData: Data) {
+        lock.lock()
+        data = newData
+        lock.unlock()
+    }
+
+    func snapshot() -> Data {
+        lock.lock()
+        defer { lock.unlock() }
+        return data
+    }
+}
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -8,6 +27,7 @@ final class AppModel: ObservableObject {
     let settingsStore = AgentSettingsStore()
     let agentRunner = AgentRunner()
     let receiverSettings = ReceiverSettingsSnapshot()
+    private let inboxJSONCache = InboxJSONCache()
 
     @Published var receiverStatus = "Starting…"
 
@@ -25,87 +45,73 @@ final class AppModel: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
+                self?.refreshInboxJSONCache()
             }
             .store(in: &cancellables)
-        // Do not relay settingsStore → AppModel: mode/settings edits were re-rendering the
-        // whole window (and eating clicks). RootWindow observes settingsStore directly.
     }
+    // Do not relay settingsStore → AppModel: mode/settings edits were re-rendering the
+    // whole window (and eating clicks). RootWindow observes settingsStore directly.
 
     func start() {
         guard server == nil else { return }
         receiverSettings.update(from: settingsStore.settings)
+        refreshInboxJSONCache()
 
         let snapshot = receiverSettings
+        let inboxCache = inboxJSONCache
         let server = FeedbackHTTPServer(
             authToken: { snapshot.token() },
             maxBodyBytes: { snapshot.bodyLimit() },
-            inboxProvider: { [weak self] in
-                guard let self else { return nil }
-                var data: Data?
-                if Thread.isMainThread {
-                    data = MainActor.assumeIsolated {
-                        try? self.inbox.inboxJSON()
-                    }
-                } else {
-                    DispatchQueue.main.sync {
-                        data = MainActor.assumeIsolated {
-                            try? self.inbox.inboxJSON()
-                        }
-                    }
-                }
-                return data
+            inboxProvider: {
+                inboxCache.snapshot()
             },
             inboxStatusHandler: { [weak self] id, statusRaw, summary in
                 guard let self else {
                     return (503, RedlineJSON.object(["ok": false, "error": "App not ready"]))
                 }
-                var httpStatus = 500
-                var body = RedlineJSON.object(["ok": false, "error": "Unknown error"])
-                let apply: () -> Void = {
+                return await MainActor.run {
                     guard let resolved = InboxItem.Status.parseAgentStatus(statusRaw) else {
-                        httpStatus = 422
-                        body = RedlineJSON.object([
-                            "ok": false,
-                            "error": "Invalid status '\(statusRaw)' — use pending|agent_running|applied|failed",
-                        ])
-                        return
+                        return (
+                            422,
+                            RedlineJSON.object([
+                                "ok": false,
+                                "error": "Invalid status '\(statusRaw)' — use pending|agent_running|applied|failed",
+                            ])
+                        )
                     }
-                    let result = MainActor.assumeIsolated { () -> (Bool, String) in
-                        let ok = self.inbox.setStatusFromAgent(id: id, status: resolved, summary: summary)
-                        return (ok, self.inbox.lastError ?? "Update failed")
+                    let ok = self.inbox.setStatusFromAgent(id: id, status: resolved, summary: summary)
+                    if ok {
+                        self.agentRunner.noteExternalStatus(
+                            id: id,
+                            status: resolved.rawValue,
+                            summary: summary
+                        )
+                        self.refreshInboxJSONCache()
+                        return (
+                            200,
+                            RedlineJSON.object([
+                                "ok": true,
+                                "id": id,
+                                "status": resolved.rawValue,
+                            ])
+                        )
                     }
-                    if result.0 {
-                        httpStatus = 200
-                        body = RedlineJSON.object([
-                            "ok": true,
-                            "id": id,
-                            "status": resolved.rawValue,
-                        ])
-                        MainActor.assumeIsolated {
-                            self.agentRunner.noteExternalStatus(
-                                id: id,
-                                status: resolved.rawValue,
-                                summary: summary
-                            )
-                        }
-                    } else {
-                        httpStatus = result.1.contains("not found") ? 404 : 409
-                        body = RedlineJSON.object(["ok": false, "error": result.1])
-                    }
+                    let err = self.inbox.lastError ?? "Update failed"
+                    let code = err.contains("not found") ? 404 : 409
+                    return (code, RedlineJSON.object(["ok": false, "error": err]))
                 }
-                if Thread.isMainThread {
-                    apply()
-                } else {
-                    DispatchQueue.main.sync(execute: apply)
-                }
-                return (httpStatus, body)
             }
         ) { [weak self] payload in
-            guard let self else { return }
+            guard let self else {
+                throw InboxReceiveError.appNotReady
+            }
             await MainActor.run {
                 self.receiverSettings.update(from: self.settingsStore.settings)
             }
-            let item = await self.inbox.receive(payload, settings: self.settingsStore.settings)
+            let item = try await self.inbox.receive(payload, settings: self.settingsStore.settings)
+            await MainActor.run {
+                self.refreshInboxJSONCache()
+            }
             // Respond to iOS immediately — do not wait for the agent run (can take minutes).
             Task { @MainActor in
                 await self.agentRunner.handleNewFeedback(
@@ -126,6 +132,21 @@ final class AppModel: ObservableObject {
 
     func settingsDidChange() {
         receiverSettings.update(from: settingsStore.settings)
+    }
+
+    private func refreshInboxJSONCache() {
+        let data = (try? inbox.inboxJSON()) ?? Data("[]".utf8)
+        inboxJSONCache.update(data)
+    }
+}
+
+private enum InboxReceiveError: Error, LocalizedError {
+    case appNotReady
+
+    var errorDescription: String? {
+        switch self {
+        case .appNotReady: return "App not ready"
+        }
     }
 }
 

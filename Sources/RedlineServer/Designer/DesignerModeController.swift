@@ -19,7 +19,7 @@ public final class DesignerModeController: ObservableObject {
     @Published public var isCapturing = false
     @Published public var saveError: String?
 
-    public private(set) var screenName: String = "screen"
+    public private(set) var screenName: String = "app"
     public private(set) var specPath: String?
     private var context: DesignerContext = EmptyDesignerContext()
     private var stateName: String?

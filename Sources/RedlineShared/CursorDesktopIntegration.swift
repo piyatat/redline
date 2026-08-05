@@ -266,7 +266,7 @@ public enum CursorDesktopIntegration {
        - Do **not** treat an already-present inbox item as new; the tool waits for a new id.
        - On success the Mac Inbox item is marked **Running** (`agent_running`).
     2. When it returns, note `id`, `screen`, `region`, `comment`, `spec`, `runtime`, and `bundleDirectory`.
-       - Composite PNG is omitted from MCP JSON (`compositeOmitted: true`) — read the image from disk.
+       - Marked-up screenshot (`composite.png`) is omitted from MCP JSON (`compositeOmitted: true`) — read the image from disk.
        - `composite.png` already includes baked markup strokes (Mac displays it as-is).
     3. Optionally call **`redline_inbox_show`** with that `id` if you need details again.
     4. Read staged feedback assets (preferred):
@@ -298,7 +298,7 @@ public enum CursorDesktopIntegration {
 
     1. Ensure the `redline` MCP server is available.
     2. Call **`redline_wait_for_feedback`** with `timeoutSeconds` = `300`.
-    3. When feedback arrives, read `.redline-feedback/prompt.md` and `.redline-feedback/composite.png` (PNG is not in the MCP JSON).
+    3. When feedback arrives, read `.redline-feedback/prompt.md` and `.redline-feedback/composite.png` (PNG is not in the MCP JSON; markup strokes are already baked into the image).
     4. Apply the requested change in this project. Use other MCP tools if needed.
     5. Call **`redline_inbox_set_status`** with `id` from step 2, `status` = `applied` (or `failed`), and a short `summary`.
     6. Report what you changed.

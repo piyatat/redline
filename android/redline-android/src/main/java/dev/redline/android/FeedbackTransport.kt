@@ -46,7 +46,11 @@ class FeedbackTransport private constructor() {
             val response = client.newCall(builder.build()).execute()
             response.use {
                 if (!it.isSuccessful) {
-                    throw FeedbackTransportException("Feedback POST failed with HTTP ${it.code}")
+                    val hint = when (it.code) {
+                        401 -> " — set DesignerOverlay(apiToken=…) or REDLINE_API_TOKEN to match Redline.app Settings"
+                        else -> ""
+                    }
+                    throw FeedbackTransportException("Feedback POST failed with HTTP ${it.code}$hint")
                 }
             }
             Log.i(TAG, "feedback OK → $baseUrl")

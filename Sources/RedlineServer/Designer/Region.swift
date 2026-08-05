@@ -5,8 +5,8 @@ import RedlineShared
 extension View {
     /// Tag a view as a designer region. In designer mode it shows an orange
     /// outline and opens the markup sheet on tap.
-    public func redlineRegion(_ name: String, state: String? = nil) -> some View {
-        modifier(DesignerRegionTagModifier(name: name, state: state))
+    public func redlineRegion(_ name: String) -> some View {
+        modifier(DesignerRegionTagModifier(name: name))
     }
 
     /// Enables designer capture on this view tree (Debug). Calls `Redline.install` on appear.
@@ -16,6 +16,7 @@ extension View {
         state: String? = nil,
         context: DesignerContext = EmptyDesignerContext(),
         feedbackBaseURL: URL? = nil,
+        apiToken: String? = nil,
         inspectPort: UInt16 = UInt16(RedlinePorts.simulatorInspectStart)
     ) -> some View {
         modifier(
@@ -25,6 +26,7 @@ extension View {
                 context: context,
                 state: state,
                 feedbackBaseURL: feedbackBaseURL,
+                apiToken: apiToken,
                 inspectPort: inspectPort
             )
         )
@@ -32,7 +34,6 @@ extension View {
 }
 private struct DesignerRegionTagModifier: ViewModifier {
     let name: String
-    let state: String?
     @ObservedObject private var controller = DesignerModeController.shared
 
     func body(content: Content) -> some View {

@@ -31,6 +31,10 @@ internal object DesignerGestureInstaller {
             }
             null -> return
             else -> {
+                // Re-wrap if another library stole Window.Callback after we attached.
+                if (installed.contains(activity) && original !is ObservingWindowCallback) {
+                    installed.remove(activity)
+                }
                 if (!installed.add(activity)) return
                 val tracker = TwoFingerLongPressTracker(
                     holdMs = HOLD_MS,

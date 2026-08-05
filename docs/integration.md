@@ -42,6 +42,7 @@ struct MyApp: App {
                 .designerOverlay(
                     // context: MyDesignerContext(),
                     // feedbackBaseURL: nil,
+                    // apiToken: "same-as-Mac-Settings",
                     // inspectPort: 47164
                 )
         }
@@ -80,7 +81,9 @@ struct MyDesignerContext: DesignerContext {
 
 ### API token (when Mac Settings has one)
 
-Set scheme env `REDLINE_API_TOKEN` (and optionally `REDLINE_FEEDBACK_URL`).
+Prefer `designerOverlay(apiToken: "…")` (or early `Redline.install(apiToken:)`). Alternatively set scheme env `REDLINE_API_TOKEN` (and optionally `REDLINE_FEEDBACK_URL`).
+
+Omitting `apiToken` / feedback URL on a later `install` or overlay appear **preserves** values configured earlier (pass `nil` / omit — do not pass an empty string if you mean “leave as-is”).
 
 ### Networking
 
@@ -164,6 +167,9 @@ No custom `Application` class is required.
 ### Root overlay
 
 ```kotlin
+import dev.redline.android.DesignerOverlay
+import dev.redline.android.redlineRegion
+
 setContent {
     MaterialTheme {
         DesignerOverlay(
@@ -214,7 +220,7 @@ object MyDesignerContext : DesignerContext {
 2. Launch a **Debug** build.
 3. **Two-finger long-press** (~0.45s) (or a demo-style button).
 4. Tap a region or **Whole screen** → draw → comment → **Send**.
-5. Inbox **Composite** is the PNG with strokes baked in.
+5. Inbox **Marked-up screenshot** (`composite.png`) is the PNG with strokes baked in.
 
 ---
 

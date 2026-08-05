@@ -45,7 +45,7 @@ public final class InspectorTCPService: @unchecked Sendable {
         boundPort = nil
     }
 
-    /// BSD IPv4 listen on 0.0.0.0 — reachable from Mac via 127.0.0.1.
+    /// BSD IPv4 listen on 127.0.0.1 — Mac reaches Simulator / USB-forwarded device via loopback; not exposed on LAN.
     @discardableResult
     private func bindIPv4(port: UInt16) -> Bool {
         let fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
@@ -61,7 +61,7 @@ public final class InspectorTCPService: @unchecked Sendable {
         addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
         addr.sin_family = sa_family_t(AF_INET)
         addr.sin_port = port.bigEndian
-        addr.sin_addr = in_addr(s_addr: INADDR_ANY.bigEndian)
+        addr.sin_addr = in_addr(s_addr: INADDR_LOOPBACK.bigEndian)
 
         let bindResult = withUnsafePointer(to: &addr) { ptr in
             ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
@@ -89,7 +89,7 @@ public final class InspectorTCPService: @unchecked Sendable {
         }
         acceptSource = source
         source.resume()
-        fputs("Redline inspector listening on 0.0.0.0:\(port) (IPv4)\n", stderr)
+        fputs("Redline inspector listening on 127.0.0.1:\(port) (IPv4)\n", stderr)
         return true
     }
 
@@ -143,18 +143,20 @@ public final class InspectorTCPService: @unchecked Sendable {
         do {
             let parameters = NWParameters.tcp
             parameters.allowLocalEndpointReuse = true
-            parameters.includePeerToPeer = true
+            parameters.includePeerToPeer = false
             if let ip = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
                 ip.version = .v4
             }
-            let listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: port)!)
+            let nwPort = NWEndpoint.Port(rawValue: port)!
+            parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: nwPort)
+            let listener = try NWListener(using: parameters)
             self.listener = listener
             self.boundPort = port
 
             listener.stateUpdateHandler = { state in
                 switch state {
                 case .ready:
-                    fputs("Redline inspector NWListener ready on \(port)\n", stderr)
+                    fputs("Redline inspector NWListener ready on 127.0.0.1:\(port)\n", stderr)
                 case .failed(let error):
                     fputs("Redline inspector NWListener failed on \(port): \(error)\n", stderr)
                 default:

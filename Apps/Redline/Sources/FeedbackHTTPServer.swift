@@ -3,9 +3,10 @@ import Network
 import RedlineShared
 
 final class FeedbackHTTPServer: @unchecked Sendable {
-    typealias FeedbackHandler = @Sendable (FeedbackPayload) async -> Void
+    /// Throws when the bundle could not be stored — caller maps to HTTP 5xx so devices keep markup.
+    typealias FeedbackHandler = @Sendable (FeedbackPayload) async throws -> Void
     /// Returns JSON body + HTTP status for a status update request.
-    typealias InboxStatusHandler = @Sendable (_ id: String, _ status: String, _ summary: String?) -> (statusCode: Int, body: String)
+    typealias InboxStatusHandler = @Sendable (_ id: String, _ status: String, _ summary: String?) async -> (statusCode: Int, body: String)
 
     private var listener: NWListener?
     private let port: UInt16
@@ -94,26 +95,26 @@ final class FeedbackHTTPServer: @unchecked Sendable {
                 next.append(data)
             }
 
-            if let request = self.tryParseHTTP(next) {
-                self.processRequest(request, connection: connection)
-                return
-            }
-
-            if isComplete {
-                if next.isEmpty {
-                    connection.cancel()
-                } else {
-                    self.respond(connection: connection, status: 400, body: "Incomplete request", contentType: "text/plain")
+            switch self.tryParseHTTP(next, isComplete: isComplete) {
+            case .needMore:
+                if isComplete {
+                    if next.isEmpty {
+                        connection.cancel()
+                    } else {
+                        self.respond(connection: connection, status: 400, body: "Incomplete request", contentType: "text/plain")
+                    }
+                    return
                 }
-                return
+                if next.count > self.maxBodyBytes() + 64 * 1024 {
+                    self.respond(connection: connection, status: 413, body: "Payload too large", contentType: "text/plain")
+                    return
+                }
+                self.receiveAll(connection: connection, buffer: next)
+            case .ready(let request):
+                self.processRequest(request, connection: connection)
+            case .badRequest(let message):
+                self.respond(connection: connection, status: 400, body: message, contentType: "text/plain")
             }
-
-            if next.count > self.maxBodyBytes() + 64 * 1024 {
-                self.respond(connection: connection, status: 413, body: "Payload too large", contentType: "text/plain")
-                return
-            }
-
-            self.receiveAll(connection: connection, buffer: next)
         }
     }
 
@@ -124,15 +125,25 @@ final class FeedbackHTTPServer: @unchecked Sendable {
         var body: Data
     }
 
-    private func tryParseHTTP(_ data: Data) -> ParsedHTTP? {
-        guard let headerEnd = findHeaderEnd(in: data) else { return nil }
+    private enum ParseOutcome {
+        case needMore
+        case ready(ParsedHTTP)
+        case badRequest(String)
+    }
+
+    private func tryParseHTTP(_ data: Data, isComplete: Bool) -> ParseOutcome {
+        guard let headerEnd = findHeaderEnd(in: data) else {
+            return isComplete ? .badRequest("Incomplete request") : .needMore
+        }
         let headerData = data.subdata(in: 0..<headerEnd)
-        guard let headerText = String(data: headerData, encoding: .utf8) else { return nil }
+        guard let headerText = String(data: headerData, encoding: .utf8) else {
+            return .badRequest("Invalid request headers")
+        }
 
         let lines = headerText.split(separator: "\r\n", omittingEmptySubsequences: false)
-        guard let requestLine = lines.first else { return nil }
+        guard let requestLine = lines.first else { return .badRequest("Missing request line") }
         let parts = requestLine.split(separator: " ")
-        guard parts.count >= 2 else { return nil }
+        guard parts.count >= 2 else { return .badRequest("Malformed request line") }
 
         var headers: [String: String] = [:]
         for line in lines.dropFirst() {
@@ -143,27 +154,43 @@ final class FeedbackHTTPServer: @unchecked Sendable {
             headers[name] = value
         }
 
+        let method = String(parts[0])
         let bodyStart = headerEnd + 4 // \r\n\r\n
-        let contentLength = Int(headers["content-length"] ?? "0") ?? 0
+        let limit = maxBodyBytes()
+        let contentLength: Int
+        if let raw = headers["content-length"] {
+            guard let parsed = Int(raw), parsed >= 0, parsed <= limit else {
+                return .badRequest("Invalid Content-Length")
+            }
+            contentLength = parsed
+        } else if methodHasBody(method) {
+            // No Content-Length — wait until the connection finishes, then take remainder.
+            guard isComplete else { return .needMore }
+            let available = max(0, data.count - bodyStart)
+            guard available <= limit else {
+                return .badRequest("Payload too large")
+            }
+            contentLength = available
+        } else {
+            contentLength = 0
+        }
+
         let available = data.count - bodyStart
-        guard available >= contentLength else { return nil }
+        guard available >= contentLength else { return .needMore }
 
         let body: Data
         if contentLength > 0 {
             body = data.subdata(in: bodyStart..<(bodyStart + contentLength))
-        } else if methodHasBody(String(parts[0])) {
-            // No Content-Length — take remainder (common for small curl tests).
-            body = data.subdata(in: bodyStart..<data.count)
         } else {
             body = Data()
         }
 
-        return ParsedHTTP(
-            method: String(parts[0]),
+        return .ready(ParsedHTTP(
+            method: method,
             path: String(parts[1]),
             headers: headers,
             body: body
-        )
+        ))
     }
 
     private func findHeaderEnd(in data: Data) -> Int? {
@@ -218,13 +245,15 @@ final class FeedbackHTTPServer: @unchecked Sendable {
             }
             do {
                 let decoded = try JSONDecoder().decode(StatusBody.self, from: request.body)
-                let result = inboxStatusHandler(itemId, decoded.status, decoded.summary)
-                respond(
-                    connection: connection,
-                    status: result.statusCode,
-                    body: result.body,
-                    contentType: "application/json"
-                )
+                Task {
+                    let result = await inboxStatusHandler(itemId, decoded.status, decoded.summary)
+                    self.respond(
+                        connection: connection,
+                        status: result.statusCode,
+                        body: result.body,
+                        contentType: "application/json"
+                    )
+                }
             } catch {
                 respond(
                     connection: connection,
@@ -248,10 +277,21 @@ final class FeedbackHTTPServer: @unchecked Sendable {
 
         do {
             let payload = try FeedbackPayload.decode(from: request.body)
+            try payload.validateForIngest()
             Task {
-                await self.handler(payload)
-                fputs("Redline receiver stored feedback \(payload.screen)/\(payload.region)\n", stderr)
-                self.respond(connection: connection, status: 200, body: "{\"ok\":true}", contentType: "application/json")
+                do {
+                    try await self.handler(payload)
+                    fputs("Redline receiver stored feedback \(payload.screen)/\(payload.region)\n", stderr)
+                    self.respond(connection: connection, status: 200, body: "{\"ok\":true}", contentType: "application/json")
+                } catch {
+                    fputs("Redline receiver store error: \(error.localizedDescription)\n", stderr)
+                    self.respond(
+                        connection: connection,
+                        status: 500,
+                        body: "{\"ok\":false,\"error\":\"Bundle write failed\"}",
+                        contentType: "application/json"
+                    )
+                }
             }
         } catch {
             fputs("Redline receiver decode error: \(error.localizedDescription)\n", stderr)
@@ -264,7 +304,15 @@ final class FeedbackHTTPServer: @unchecked Sendable {
         guard let value = headers["authorization"] else { return false }
         let prefix = "bearer "
         guard value.lowercased().hasPrefix(prefix) else { return false }
-        return String(value.dropFirst(prefix.count)) == expected
+        let provided = String(value.dropFirst(prefix.count))
+        let a = Array(provided.utf8)
+        let b = Array(expected.utf8)
+        guard a.count == b.count else { return false }
+        var diff: UInt8 = 0
+        for i in a.indices {
+            diff |= a[i] ^ b[i]
+        }
+        return diff == 0
     }
 
     private func respond(connection: NWConnection, status: Int, body: String, contentType: String) {

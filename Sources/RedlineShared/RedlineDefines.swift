@@ -93,11 +93,11 @@ public enum AgentTriggerMode: String, Codable, CaseIterable, Sendable {
     public var summary: String {
         switch self {
         case .awaitDesktopMCP:
-            return "Best for Cursor desktop + `/redline-wait` (MCP plugins stay available). Save on device — Redline will not start Agent CLI."
+            return "Best for Cursor desktop + `/redline-wait` (MCP plugins stay available). Send from device — Redline will not start Agent CLI."
         case .triggerAgent:
-            return "On each Save, Redline starts the selected CLI (Cursor Agent or Claude) in your project folder."
+            return "On each Send, Redline starts the selected CLI (Cursor Agent or Claude) in your project folder."
         case .notify:
-            return "Saves the feedback bundle and shows a notification. Nothing runs until you use Send to AI."
+            return "Stores the feedback bundle and shows a notification. Nothing runs until you use Send to AI."
         case .off:
             return "Quiet inbox. Bundles are stored; use Send to AI on an item when you want an agent run."
         }

@@ -146,12 +146,15 @@ final class AgentRunner: ObservableObject {
         let statusBeforeChat = item?.status ?? .pending
 
         // CAS claim before marking busy — same ownership model as run().
+        // Chat without a pending claim must not force status transitions.
+        var claimedForChat = false
         if let item, item.status == .pending {
             guard inbox.claimPendingAsRunning(id: item.id, summary: "Chat…") else {
                 appendLog("Could not claim item — \(inbox.lastError ?? "already claimed").\n")
                 lastMessage = inbox.lastError ?? "Claim failed"
                 return
             }
+            claimedForChat = true
         }
 
         let runId = UUID().uuidString
@@ -166,10 +169,6 @@ final class AgentRunner: ObservableObject {
             if runningJobIDs.isEmpty {
                 activeInboxItemId = nil
             }
-        }
-
-        if let item, item.status != .pending {
-            inbox.updateStatus(id: item.id, status: .agentRunning, proposalSummary: "Chat…")
         }
 
         appendLog("\n> \(trimmed)\n")
@@ -205,25 +204,28 @@ final class AgentRunner: ObservableObject {
             markSessionContinuable(projectPath: project)
         }
 
-        if let item {
+        if let item, claimedForChat {
             if let path = item.bundleDirectory {
                 let logURL = URL(fileURLWithPath: path).appendingPathComponent("agent-hook.log")
                 try? agentLog.data(using: .utf8)?.write(to: logURL)
             }
             let clipped = String((agentLog.isEmpty ? result.output : agentLog).prefix(2000))
             let live = inbox.items.first(where: { $0.id == item.id })?.status
-            if result.cancelled {
-                // Only demote if we still own the running claim.
-                if live == nil || live == .agentRunning {
+            // Only touch status when we own the pending→running claim.
+            if live == .agentRunning {
+                if result.cancelled {
                     inbox.updateStatus(id: item.id, status: .pending, proposalSummary: "Stopped by user\n\(clipped)")
-                }
-            } else if result.success {
-                // Restore pre-chat status only while we still own the running claim.
-                if live == .agentRunning {
+                } else if result.success {
                     inbox.updateStatus(id: item.id, status: statusBeforeChat, proposalSummary: "Chat ok\n\(clipped)")
+                } else {
+                    inbox.updateStatus(id: item.id, status: .failed, proposalSummary: "\(result.message)\n\(clipped)")
                 }
-            } else if live == nil || live == .agentRunning {
-                inbox.updateStatus(id: item.id, status: .failed, proposalSummary: "\(result.message)\n\(clipped)")
+            }
+        } else if let item, !claimedForChat {
+            // Chat against a non-pending item — leave its status alone; still persist the log.
+            if let path = item.bundleDirectory {
+                let logURL = URL(fileURLWithPath: path).appendingPathComponent("agent-hook.log")
+                try? agentLog.data(using: .utf8)?.write(to: logURL)
             }
         }
 

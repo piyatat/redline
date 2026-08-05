@@ -22,20 +22,28 @@ public enum Redline {
 
     /// Install Redline in the host app (Debug only).
     /// Prefer `.designerOverlay(…)` — it calls this on appear. Use `install` only when you
-    /// need feedback URL / inspect port before any overlay is mounted.
+    /// need feedback URL / inspect port / token before any overlay is mounted.
     /// `screen` / `spec` are optional Inbox/agent labels (default screen `"app"`).
+    /// `inspectPort` is applied only on the first install (hierarchy TCP).
     public static func install(
         screen: String = "app",
         spec: String? = nil,
         state: String? = nil,
         context designerContext: DesignerContext = EmptyDesignerContext(),
         feedbackBaseURL: URL? = nil,
+        apiToken: String? = nil,
         inspectPort: UInt16 = UInt16(RedlinePorts.simulatorInspectStart)
     ) {
         #if os(iOS)
         guard _isDebugBuild else { return }
-        let url = feedbackBaseURL ?? FeedbackTransport.defaultFeedbackURL()
-        FeedbackTransport.shared.configure(baseURL: url)
+        if let feedbackBaseURL {
+            FeedbackTransport.shared.configure(baseURL: feedbackBaseURL)
+        } else if !isInstalled {
+            FeedbackTransport.shared.configure(baseURL: FeedbackTransport.defaultFeedbackURL())
+        }
+        if apiToken != nil {
+            FeedbackTransport.shared.configureApiToken(apiToken)
+        }
         Task { @MainActor in
             DesignerModeController.shared.activate(
                 screen: screen,
@@ -54,11 +62,12 @@ public enum Redline {
         _ = state
         _ = designerContext
         _ = feedbackBaseURL
+        _ = apiToken
         _ = inspectPort
         #endif
     }
 
-    /// Update screen / spec / state labels used on the next Save (e.g. when navigating).
+    /// Update screen / spec / state labels used on the next Send (e.g. when navigating).
     public static func updateScreen(screen: String, spec: String? = nil, state: String? = nil) {
         #if os(iOS)
         guard _isDebugBuild else { return }
@@ -93,7 +102,7 @@ public enum Redline {
 
 #if os(iOS)
 extension Redline {
-    /// Fire-and-forget POST (logs failures to stderr). Prefer `postFeedbackAwaiting` from Save.
+    /// Fire-and-forget POST (logs failures to stderr). Prefer `postFeedbackAwaiting` from Send.
     public static func postFeedback(_ payload: FeedbackPayload) {
         guard _isDebugBuild else { return }
         Task {

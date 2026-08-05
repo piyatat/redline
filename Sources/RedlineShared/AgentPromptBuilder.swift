@@ -88,7 +88,8 @@ public struct AgentPromptBuilder {
         }
         line("Device", [runtime.deviceModel, runtime.systemName, runtime.systemVersion].compactMap { $0 }.joined(separator: " "))
         if let sim = runtime.isSimulator {
-            line("Simulator", sim ? "yes" : "no")
+            let label = runtime.systemName?.lowercased().contains("android") == true ? "Emulator" : "Simulator"
+            line(label, sim ? "yes" : "no")
         }
         line("Locale", runtime.localeIdentifier)
         line("Time zone", runtime.timeZoneIdentifier)

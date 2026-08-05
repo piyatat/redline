@@ -38,7 +38,8 @@ final class InboxStore: ObservableObject {
         loadPersisted()
     }
 
-    func receive(_ payload: FeedbackPayload, settings: AgentSettings) async -> InboxItem {
+    /// Persists a feedback bundle. On write failure, inserts a `.failed` inbox row for visibility, then **throws** so the HTTP receiver can return non-2xx (devices keep markup open).
+    func receive(_ payload: FeedbackPayload, settings: AgentSettings) async throws -> InboxItem {
         let itemId = UUID().uuidString
         var item = InboxItem(id: itemId, payload: payload)
         _ = settings
@@ -57,9 +58,11 @@ final class InboxStore: ObservableObject {
             return item
         } catch {
             lastError = error.localizedDescription
+            item.status = .failed
+            item.proposalSummary = "Bundle write failed: \(error.localizedDescription)"
             items.insert(item, at: 0)
             persist()
-            return item
+            throw error
         }
     }
 
