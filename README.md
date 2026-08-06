@@ -2,6 +2,20 @@
 
 Debug-only **designer feedback** capture for **iOS** and **Android**: mark up a screen, **Send** to a native **macOS** Inbox, then trigger Cursor/Claude agents (CLI or MCP).
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/mac-inbox.png" alt="Redline.app Mac Inbox with marked-up screenshot and agent panel" width="900" />
+</p>
+
+<p align="center">
+  <img src="docs/images/ios-demo.png" alt="Redline iOS Demo host app" width="280" />
+  &nbsp;&nbsp;
+  <img src="docs/images/android-markup.png" alt="Android designer markup with baked red stroke" width="280" />
+</p>
+
+<p align="center"><sub>Mac Inbox · iOS demo host · Android markup (strokes baked into <code>composite.png</code>)</sub></p>
+
 ## Quick start
 
 ### 0. Mac receiver
