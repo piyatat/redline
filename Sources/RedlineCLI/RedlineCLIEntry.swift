@@ -80,7 +80,7 @@ enum RedlineCLI {
 
     private static func runInbox(_ args: [String]) throws {
         guard let sub = args.first else {
-            print("usage: redline inbox list [--status STATUS] [--ids] [--count] [--compact]|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS] [--ids] [--count] [--compact] [--limit N]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
         let client = RedlineHTTPClient()
@@ -90,10 +90,17 @@ enum RedlineCLI {
             var items = try client.inboxList()
             if let statusFilter = Self.flagValue("--status", in: rest) {
                 guard let wanted = InboxItem.Status.parseAgentStatus(statusFilter) else {
-                    print("usage: redline inbox list [--status pending|agent_running|applied|failed] [--ids] [--count] [--compact]")
+                    print("usage: redline inbox list [--status pending|agent_running|applied|failed] [--ids] [--count] [--compact] [--limit N]")
                     exit(1)
                 }
                 items = items.filter { $0.status == wanted }
+            }
+            if let limitStr = Self.flagValue("--limit", in: rest) {
+                guard let limit = Int(limitStr), limit >= 0 else {
+                    print("usage: redline inbox list [--status pending|agent_running|applied|failed] [--ids] [--count] [--compact] [--limit N]")
+                    exit(1)
+                }
+                items = Array(items.prefix(limit))
             }
             if rest.contains("--ids") {
                 for item in items {
@@ -142,7 +149,7 @@ enum RedlineCLI {
             let item = try client.inboxSetStatus(id: id, status: status, summary: summary)
             print("ok \(item.id) → \(item.status.rawValue)")
         default:
-            print("usage: redline inbox list [--status STATUS] [--ids] [--count] [--compact]|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS] [--ids] [--count] [--compact] [--limit N]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
     }
@@ -263,7 +270,7 @@ enum RedlineCLI {
         Commands:
           health
           version
-          inbox list [--status pending|agent_running|applied|failed] [--ids] [--count] [--compact]
+          inbox list [--status pending|agent_running|applied|failed] [--ids] [--count] [--compact] [--limit N]
           inbox show <id> | inbox set-status <id> <status> [summary]
           agent run <id>
           inspect ping [--port N]   # optional iOS hierarchy TCP
