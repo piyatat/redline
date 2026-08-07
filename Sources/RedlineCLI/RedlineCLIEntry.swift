@@ -80,13 +80,21 @@ enum RedlineCLI {
 
     private static func runInbox(_ args: [String]) throws {
         guard let sub = args.first else {
-            print("usage: redline inbox list|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
         let client = RedlineHTTPClient()
         switch sub {
         case "list":
-            let items = try client.inboxList()
+            let rest = Array(args.dropFirst())
+            var items = try client.inboxList()
+            if let statusFilter = Self.flagValue("--status", in: rest) {
+                guard let wanted = InboxItem.Status.parseAgentStatus(statusFilter) else {
+                    print("usage: redline inbox list [--status pending|agent_running|applied|failed]")
+                    exit(1)
+                }
+                items = items.filter { $0.status == wanted }
+            }
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             encoder.dateEncodingStrategy = .iso8601
@@ -114,7 +122,7 @@ enum RedlineCLI {
             let item = try client.inboxSetStatus(id: id, status: status, summary: summary)
             print("ok \(item.id) → \(item.status.rawValue)")
         default:
-            print("usage: redline inbox list|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
     }
@@ -224,7 +232,8 @@ enum RedlineCLI {
         Commands:
           health
           version
-          inbox list | inbox show <id> | inbox set-status <id> <status> [summary]
+          inbox list [--status pending|agent_running|applied|failed]
+          inbox show <id> | inbox set-status <id> <status> [summary]
           agent run <id>
           inspect ping [--port N]   # optional iOS hierarchy TCP
           gates run [--workspace PATH] [--bundle PATH]
