@@ -80,7 +80,7 @@ enum RedlineCLI {
 
     private static func runInbox(_ args: [String]) throws {
         guard let sub = args.first else {
-            print("usage: redline inbox list [--status STATUS] [--ids]|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS] [--ids] [--count]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
         let client = RedlineHTTPClient()
@@ -90,7 +90,7 @@ enum RedlineCLI {
             var items = try client.inboxList()
             if let statusFilter = Self.flagValue("--status", in: rest) {
                 guard let wanted = InboxItem.Status.parseAgentStatus(statusFilter) else {
-                    print("usage: redline inbox list [--status pending|agent_running|applied|failed] [--ids]")
+                    print("usage: redline inbox list [--status pending|agent_running|applied|failed] [--ids] [--count]")
                     exit(1)
                 }
                 items = items.filter { $0.status == wanted }
@@ -99,6 +99,10 @@ enum RedlineCLI {
                 for item in items {
                     print(item.id)
                 }
+                break
+            }
+            if rest.contains("--count") {
+                print(items.count)
                 break
             }
             let encoder = JSONEncoder()
@@ -128,7 +132,7 @@ enum RedlineCLI {
             let item = try client.inboxSetStatus(id: id, status: status, summary: summary)
             print("ok \(item.id) → \(item.status.rawValue)")
         default:
-            print("usage: redline inbox list [--status STATUS] [--ids]|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS] [--ids] [--count]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
     }
@@ -238,7 +242,7 @@ enum RedlineCLI {
         Commands:
           health
           version
-          inbox list [--status pending|agent_running|applied|failed] [--ids]
+          inbox list [--status pending|agent_running|applied|failed] [--ids] [--count]
           inbox show <id> | inbox set-status <id> <status> [summary]
           agent run <id>
           inspect ping [--port N]   # optional iOS hierarchy TCP
