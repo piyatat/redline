@@ -15,6 +15,8 @@ enum RedlineCLI {
             case "health":
                 let ok = try RedlineHTTPClient().health()
                 print(ok ? "ok" : "down")
+            case "version", "--version", "-v":
+                print("redline \(RedlineVersion.string)")
             case "inbox":
                 try runInbox(args)
             case "agent":
@@ -221,6 +223,7 @@ enum RedlineCLI {
 
         Commands:
           health
+          version
           inbox list | inbox show <id> | inbox set-status <id> <status> [summary]
           agent run <id>
           inspect ping [--port N]   # optional iOS hierarchy TCP

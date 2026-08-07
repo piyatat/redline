@@ -1,5 +1,10 @@
 import Foundation
 
+public enum RedlineVersion {
+    /// Marketing / CLI / MCP server version string (keep in sync across surfaces).
+    public static let string = "0.1.0"
+}
+
 public enum RedlinePorts {
     public static let feedbackDefault = 8765
     public static let feedbackScanEnd = 8780

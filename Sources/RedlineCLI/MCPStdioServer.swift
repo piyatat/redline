@@ -46,7 +46,7 @@ final class MCPStdioServer {
                 id: request.id,
                 result: MCPResult(
                     protocolVersion: "2024-11-05",
-                    serverInfo: MCPServerInfo(name: "redline", version: "0.1.0"),
+                    serverInfo: MCPServerInfo(name: "redline", version: RedlineVersion.string),
                     capabilities: MCPCapabilities(tools: MCPToolsCapability())
                 )
             )
