@@ -167,6 +167,7 @@ Set `REDLINE_WORKSPACE_ROOT` (CLI/MCP) to the repo containing `scripts/gate-mani
 ```bash
 swift run redline health
 swift run redline inbox list
+swift run redline inbox list --compact   # id, status, time, summary (tab-separated)
 swift run redline mcp
 ```
 

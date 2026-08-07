@@ -80,7 +80,7 @@ enum RedlineCLI {
 
     private static func runInbox(_ args: [String]) throws {
         guard let sub = args.first else {
-            print("usage: redline inbox list [--status STATUS] [--ids] [--count]|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS] [--ids] [--count] [--compact]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
         let client = RedlineHTTPClient()
@@ -90,7 +90,7 @@ enum RedlineCLI {
             var items = try client.inboxList()
             if let statusFilter = Self.flagValue("--status", in: rest) {
                 guard let wanted = InboxItem.Status.parseAgentStatus(statusFilter) else {
-                    print("usage: redline inbox list [--status pending|agent_running|applied|failed] [--ids] [--count]")
+                    print("usage: redline inbox list [--status pending|agent_running|applied|failed] [--ids] [--count] [--compact]")
                     exit(1)
                 }
                 items = items.filter { $0.status == wanted }
@@ -103,6 +103,16 @@ enum RedlineCLI {
             }
             if rest.contains("--count") {
                 print(items.count)
+                break
+            }
+            if rest.contains("--compact") {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                for item in items {
+                    let summary = compactSummary(for: item)
+                    let ts = formatter.string(from: item.receivedAt)
+                    print("\(item.id)\t\(item.status.rawValue)\t\(ts)\t\(summary)")
+                }
                 break
             }
             let encoder = JSONEncoder()
@@ -132,7 +142,7 @@ enum RedlineCLI {
             let item = try client.inboxSetStatus(id: id, status: status, summary: summary)
             print("ok \(item.id) → \(item.status.rawValue)")
         default:
-            print("usage: redline inbox list [--status STATUS] [--ids] [--count]|show <id>|set-status <id> <status> [summary]")
+            print("usage: redline inbox list [--status STATUS] [--ids] [--count] [--compact]|show <id>|set-status <id> <status> [summary]")
             exit(1)
         }
     }
@@ -235,6 +245,17 @@ enum RedlineCLI {
         return args[idx + 1]
     }
 
+    /// One-line summary for `--compact` inbox list (tabs/newlines stripped).
+    private static func compactSummary(for item: InboxItem) -> String {
+        let raw = item.proposalSummary?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? item.payload.comment.trimmingCharacters(in: .whitespacesAndNewlines)
+        let line = raw.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
+        return line
+            .replacingOccurrences(of: "\t", with: " ")
+            .prefix(120)
+            .description
+    }
+
     private static func printUsage() {
         print("""
         redline — CLI for Redline Mac receiver (inbox / agents / MCP)
@@ -242,7 +263,7 @@ enum RedlineCLI {
         Commands:
           health
           version
-          inbox list [--status pending|agent_running|applied|failed] [--ids] [--count]
+          inbox list [--status pending|agent_running|applied|failed] [--ids] [--count] [--compact]
           inbox show <id> | inbox set-status <id> <status> [summary]
           agent run <id>
           inspect ping [--port N]   # optional iOS hierarchy TCP
