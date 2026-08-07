@@ -188,7 +188,7 @@ Ports and USB forwarding: [docs/device-setup.md](docs/device-setup.md). Android 
 
 ## Updates
 
-Optional `REDLINE_APPCAST_URL` for distribution feeds (see [docs/appcast-setup.md](docs/appcast-setup.md)). In-app Check for Updates is not wired yet.
+Optional `REDLINE_APPCAST_URL` for distribution feeds (see [docs/appcast-setup.md](docs/appcast-setup.md)). Redline.app → **Check for Updates…** reads that feed when set; otherwise it explains how to configure it.
 
 ## Project status
 

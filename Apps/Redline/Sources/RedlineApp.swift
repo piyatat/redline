@@ -176,6 +176,13 @@ struct RedlineApp: App {
         .windowStyle(.titleBar)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    Task { @MainActor in
+                        await UpdateChecker.presentCheckFromMenu()
+                    }
+                }
+            }
             CommandMenu("Inbox") {
                 Button("Show Inbox") {
                     NotificationCenter.default.post(name: .redlineShowInbox, object: nil)
